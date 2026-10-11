@@ -3,6 +3,23 @@ import path from 'node:path';
 import { sha256Hex } from '@proofchain/core';
 import { FileStore, PutInput, GetResult, StorageMismatchError, StoreKind } from './FileStore.js';
 
+function findMonorepoRoot(startDir: string = process.cwd()): string {
+  let curr = path.resolve(startDir);
+  while (curr !== path.dirname(curr)) {
+    const pkgPath = path.join(curr, 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+        if (pkg.name === 'proofchain-monorepo') {
+          return curr;
+        }
+      } catch {}
+    }
+    curr = path.dirname(curr);
+  }
+  return process.cwd();
+}
+
 export class LocalDiskFileStore implements FileStore {
   readonly name = 'local';
   private baseDir: string;
@@ -10,7 +27,8 @@ export class LocalDiskFileStore implements FileStore {
   private previewsDir: string;
 
   constructor(customBaseDir?: string) {
-    this.baseDir = customBaseDir || process.env.DATA_DIR || path.resolve(process.cwd(), 'data');
+    const repoRoot = findMonorepoRoot();
+    this.baseDir = customBaseDir || process.env.DATA_DIR || path.join(repoRoot, 'data');
     this.filesDir = path.join(this.baseDir, 'files');
     this.previewsDir = path.join(this.baseDir, 'previews');
 

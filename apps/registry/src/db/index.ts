@@ -16,14 +16,33 @@ export interface RegistryDB {
   close(): void;
 }
 
+function findMonorepoRoot(startDir: string = process.cwd()): string {
+  let curr = path.resolve(startDir);
+  while (curr !== path.dirname(curr)) {
+    const pkgPath = path.join(curr, 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+        if (pkg.name === 'proofchain-monorepo') {
+          return curr;
+        }
+      } catch {}
+    }
+    curr = path.dirname(curr);
+  }
+  return process.cwd();
+}
+
 let defaultDb: any = null;
 let currentDbPath: string | null = null;
 
 export function getDbPath(customPath?: string): string {
   if (customPath) return customPath;
   if (process.env.DATABASE_PATH) return process.env.DATABASE_PATH;
-  const dataDir = process.env.DATA_DIR || path.resolve(process.cwd(), 'data');
-  return path.join(dataDir, 'registry.db');
+  if (process.env.DATA_DIR) return path.join(process.env.DATA_DIR, 'registry.db');
+
+  const repoRoot = findMonorepoRoot();
+  return path.join(repoRoot, 'data', 'registry.db');
 }
 
 /**
