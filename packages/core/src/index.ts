@@ -4,3 +4,6 @@ export * from './bytes.js';
 export * from './canonical.js';
 export * from './hash.js';
 export * from './merkle.js';
+export * from './bundle.js';
+export * from './anchorEntry.js';
+export * from './manifest.js';
