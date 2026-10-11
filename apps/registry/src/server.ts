@@ -6,6 +6,8 @@ import { getDb, initDatabase } from './db/index.js';
 import { DatabaseSync } from './db/sqlite.js';
 import { createFileStore, FileStore } from './storage/localDisk.js';
 import { requireIssuerAuth } from './middleware/auth.js';
+import { createRecordsRouter } from './routes/records.js';
+import { createBatchesRouter } from './routes/batches.js';
 
 dotenv.config();
 
@@ -57,6 +59,10 @@ export function createRegistryApp(options?: {
   app.get('/api/protected-check', requireIssuerAuth, (_req, res) => {
     res.json({ ok: true, message: 'Authorized issuer' });
   });
+
+  // Mount API routers
+  app.use('/api/records', createRecordsRouter(db, fileStore));
+  app.use('/api/batches', createBatchesRouter(db));
 
   return { app, fileStore, db };
 }
