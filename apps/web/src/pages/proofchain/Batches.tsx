@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Layers, ArrowRight, Lock, RefreshCw, AlertCircle } from 'lucide-react';
-import { api, BatchItem, getIssuerToken, setIssuerToken } from '../../lib/api';
+import { api, BatchItem, getIssuerToken, setIssuerToken, DEFAULT_DEV_ISSUER_TOKEN } from '../../lib/api';
 
 export const Batches: React.FC = () => {
   const [batches, setBatches] = useState<BatchItem[]>([]);
@@ -9,7 +9,7 @@ export const Batches: React.FC = () => {
   const [sealing, setSealing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showTokenModal, setShowTokenModal] = useState(false);
-  const [tokenInput, setTokenInput] = useState('');
+  const [tokenInput, setTokenInput] = useState(DEFAULT_DEV_ISSUER_TOKEN);
 
   const loadBatches = async () => {
     setLoading(true);
@@ -43,7 +43,7 @@ export const Batches: React.FC = () => {
   }, []);
 
   const handleSeal = async () => {
-    const token = getIssuerToken();
+    const token = getIssuerToken() || DEFAULT_DEV_ISSUER_TOKEN;
     if (!token) {
       setShowTokenModal(true);
       return;
