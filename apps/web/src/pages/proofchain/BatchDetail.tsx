@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Layers, ShieldCheck, Download, Copy, Check, Lock, RefreshCw, Blocks, Shield, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Layers, ShieldCheck, Download, Copy, Check, Lock, RefreshCw, Blocks, Shield, AlertCircle, Eye } from 'lucide-react';
 import { api, BatchDetailResponse } from '../../lib/api';
 import { MerkleTree } from '../../components/MerkleTree';
 
@@ -23,7 +23,10 @@ export const BatchDetail: React.FC = () => {
             id: r.id,
             leafHash: r.leaf_hash || r.leafHash || '',
             index: r.leaf_index !== undefined ? r.leaf_index : idx,
-            title: r.title || 'Institutional Document',
+            title: r.title || r.file_name || 'Institutional Document',
+            fileName: r.file_name || r.fileName,
+            fileRef: r.file_ref || r.fileRef,
+            storageMode: r.storage_mode || r.storageMode,
             status: r.status || data.status || 'anchored',
           }));
 
@@ -352,15 +355,27 @@ export const BatchDetail: React.FC = () => {
                     {rec.leafHash ? `${rec.leafHash.slice(0, 10)}...${rec.leafHash.slice(-8)}` : 'Pending'}
                   </td>
                   <td className="py-3.5 px-3 text-right">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownloadProof(rec.id, rec.index);
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white transition-all border border-blue-200 font-semibold text-[11px]"
-                    >
-                      <Download className="w-3.5 h-3.5" /> {isOpen ? 'Seal & Export' : '.pcproof.json'}
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <a
+                        href={`/api/records/${rec.id}/file`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 transition-all font-semibold text-[11px] border border-slate-200"
+                        title="View or download original uploaded document"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-blue-600" /> View Document
+                      </a>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadProof(rec.id, rec.index);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white transition-all border border-blue-200 font-semibold text-[11px]"
+                      >
+                        <Download className="w-3.5 h-3.5" /> {isOpen ? 'Seal & Export' : '.pcproof.json'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

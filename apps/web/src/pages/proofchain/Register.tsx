@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Upload, CheckCircle2, Cpu, ArrowRight, Layers, AlertCircle, FileText } from 'lucide-react';
+import { Upload, CheckCircle2, Cpu, ArrowRight, Layers, AlertCircle, FileText, Eye } from 'lucide-react';
 import { api, RecordResponse, ExtractResponse } from '../../lib/api';
 import { hashFile } from '../../lib/fileHash';
 
@@ -78,6 +78,7 @@ export const Register: React.FC = () => {
           size: item.file.size,
           contentHash: item.contentHash,
           confirmedBy: 'Admin / Registration Officer',
+          storeCopy: true,
           metadata: {
             category: item.category,
             confidence: item.confidence,
@@ -204,14 +205,24 @@ export const Register: React.FC = () => {
 
           <div className="space-y-2 font-mono text-xs">
             {registeredRecords.map((r, i) => (
-              <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+              <div key={i} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="font-bold text-slate-900">Record ID: {r.recordId}</div>
                   <div className="text-[11px] text-slate-500">Leaf Hash: {r.leafHash.slice(0, 24)}...</div>
                 </div>
-                <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-bold uppercase text-[10px]">
-                  {r.status}
-                </span>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`/api/records/${r.recordId}/file`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-blue-50 text-blue-700 hover:text-blue-900 border border-blue-200 font-semibold text-xs shadow-2xs transition-all"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-blue-600" /> View Document
+                  </a>
+                  <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-bold uppercase text-[10px]">
+                    {r.status}
+                  </span>
+                </div>
               </div>
             ))}
           </div>

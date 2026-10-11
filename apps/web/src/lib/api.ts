@@ -75,6 +75,10 @@ export interface BatchDetailResponse extends BatchItem {
     leafHash: string;
     index: number;
     title?: string;
+    fileName?: string;
+    mime?: string;
+    fileRef?: string;
+    storageMode?: string;
     status: string;
   }>;
   levels: string[][];
@@ -240,11 +244,14 @@ export const api = {
       if (!leafHashVal) {
         leafHashVal = computeLeafHash(bytes);
       }
-      if (params.storeCopy) {
+      const shouldStore = params.storeCopy !== false;
+      if (shouldStore) {
         let binary = '';
         const len = bytes.byteLength;
-        for (let i = 0; i < len; i++) {
-          binary += String.fromCharCode(bytes[i]);
+        const chunkSize = 0x8000;
+        for (let i = 0; i < len; i += chunkSize) {
+          const chunk = bytes.subarray(i, Math.min(i + chunkSize, len));
+          binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
         }
         fileBase64 = btoa(binary);
       }
@@ -260,7 +267,7 @@ export const api = {
         fileName: params.fileName || params.file?.name,
         mime: params.mime || params.file?.type || 'application/octet-stream',
         size: params.size ?? params.file?.size,
-        storeCopy: !!params.storeCopy,
+        storeCopy: params.storeCopy !== false,
         contentHash,
         leafHash: leafHashVal,
         fileBase64,

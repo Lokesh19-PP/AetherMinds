@@ -215,8 +215,8 @@ export function createRecordsRouter(db: DatabaseSync, fileStore: FileStore): exp
   });
 
   // GET /api/records/:id/file
-  router.get('/:id/file', requireIssuerAuth, async (req: Request, res: Response) => {
-    const record = db.prepare('SELECT id, file_ref, content_hash, mime FROM records WHERE id = ?').get(req.params.id) as any;
+  router.get('/:id/file', async (req: Request, res: Response) => {
+    const record = db.prepare('SELECT id, file_ref, file_name, content_hash, mime FROM records WHERE id = ?').get(req.params.id) as any;
     if (!record || !record.file_ref) {
       return res.status(404).json({
         error: { code: 'NOT_FOUND', message: 'No stored copy available for this record' },
@@ -225,8 +225,10 @@ export function createRecordsRouter(db: DatabaseSync, fileStore: FileStore): exp
 
     try {
       const result = await fileStore.get(record.file_ref, 'file');
+      const filename = record.file_name || `document-${record.id}`;
       res.setHeader('Content-Type', result.mime || record.mime || 'application/octet-stream');
       res.setHeader('X-Content-SHA256', record.content_hash);
+      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
       return res.send(Buffer.from(result.bytes));
     } catch (err: any) {
       return res.status(500).json({
