@@ -99,13 +99,13 @@ export const Batches: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="text-xs uppercase font-mono tracking-wider text-blue-600 font-bold">
-            Side 1 · Merkle Batches
+            Document Batches
           </div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            Batches & Merkle Trees
+            Batches & Registered Records
           </h1>
           <p className="text-slate-600 text-sm mt-1">
-            Grouped RFC 6962 Merkle tree batches. Each batch is anchored to the append-only ledger and the local Hardhat smart contract.
+            Registered documents are batched and anchored to the ledger. Each sealed batch produces verifiable cryptographic proof bundles.
           </p>
         </div>
 
@@ -125,7 +125,7 @@ export const Batches: React.FC = () => {
             className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm flex items-center gap-2 transition-all shadow-sm disabled:opacity-50"
           >
             <Lock className="w-4 h-4" />
-            {sealing ? 'Sealing & Anchoring...' : 'Seal Open Batch'}
+            {sealing ? 'Sealing Batch...' : 'Seal & Finalize Open Batch'}
           </button>
         </div>
       </div>
@@ -145,10 +145,10 @@ export const Batches: React.FC = () => {
               <tr>
                 <th className="py-3.5 px-4">Batch ID</th>
                 <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4">Records / Leaves</th>
+                <th className="py-3.5 px-4">Documents</th>
                 <th className="py-3.5 px-4">Merkle Root</th>
-                <th className="py-3.5 px-4">Anchor Seq</th>
-                <th className="py-3.5 px-4">Ethereum Tx</th>
+                <th className="py-3.5 px-4">Ledger Seq</th>
+                <th className="py-3.5 px-4">Smart Contract Tx</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -166,7 +166,7 @@ export const Batches: React.FC = () => {
                   </td>
                   <td className="py-4 px-4">{renderStatusBadge(b.status)}</td>
                   <td className="py-4 px-4 font-bold text-slate-900">
-                    {b.leafCount} {b.leafCount === 1 ? 'record' : 'records'}
+                    {b.leafCount} {b.leafCount === 1 ? 'document' : 'documents'}
                   </td>
                   <td className="py-4 px-4 text-blue-700 font-mono font-medium">
                     {b.root && b.root !== 'pending_seal' ? (
@@ -174,11 +174,11 @@ export const Batches: React.FC = () => {
                         {b.root.slice(0, 8)}...{b.root.slice(-6)}
                       </span>
                     ) : (
-                      <span className="text-slate-400 italic">Pending batch seal</span>
+                      <span className="text-slate-400 italic">Pending seal</span>
                     )}
                   </td>
                   <td className="py-4 px-4 font-bold text-slate-900">
-                    {b.anchorSeq ? `#${b.anchorSeq}` : '—'}
+                    {b.anchorSeq ? `Entry #${b.anchorSeq}` : '—'}
                   </td>
                   <td className="py-4 px-4 text-slate-500">
                     {b.ethTxHash ? (
@@ -194,7 +194,7 @@ export const Batches: React.FC = () => {
                       to={`/proofchain/batches/${b.id}`}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white transition-all font-semibold border border-blue-200 hover:border-transparent"
                     >
-                      Inspect Merkle Tree <ArrowRight className="w-3.5 h-3.5" />
+                      View Records & Proofs <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </td>
                 </tr>

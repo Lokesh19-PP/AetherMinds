@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Upload, CheckCircle2, Cpu, ArrowRight, Layers, AlertCircle, FileText, Eye } from 'lucide-react';
-import { api, RecordResponse, ExtractResponse } from '../../lib/api';
+import { Upload, CheckCircle2, ArrowRight, Layers, AlertCircle, FileText, Eye, Download, ShieldCheck, Sparkles, RefreshCw } from 'lucide-react';
+import { api, RecordResponse } from '../../lib/api';
 import { hashFile } from '../../lib/fileHash';
 
 interface QueuedFile {
   file: File;
+  title: string;
   contentHash: string;
   category: string;
   confidence: number;
@@ -13,10 +14,12 @@ interface QueuedFile {
 
 export const Register: React.FC = () => {
   const [queuedFiles, setQueuedFiles] = useState<QueuedFile[]>([]);
-  const [confirmed, setConfirmed] = useState<boolean>(false);
+  const [confirmed, setConfirmed] = useState<boolean>(true);
+  const [autoSeal, setAutoSeal] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [extracting, setExtracting] = useState<boolean>(false);
   const [registeredRecords, setRegisteredRecords] = useState<RecordResponse[]>([]);
+  const [downloadingProof, setDownloadingProof] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,17 +41,17 @@ export const Register: React.FC = () => {
             confidence = extRes.category.confidence;
           }
         } catch {
-          // Heuristic fallback
           if (f.name.endsWith('.pdf')) {
-            category = 'Official Academic Record / Document';
-            confidence = 0.85;
+            category = 'Official Certificate / Diploma';
+            confidence = 0.88;
           } else if (f.type.startsWith('image/')) {
-            category = 'Verified Photographic Evidence';
+            category = 'Photographic Evidence';
             confidence = 0.88;
           }
         }
         queued.push({
           file: f,
+          title: f.name.replace(/\.[^/.]+$/, ''),
           contentHash: hashRes.hex,
           category,
           confidence,
@@ -63,7 +66,7 @@ export const Register: React.FC = () => {
   };
 
   const handleRegister = async () => {
-    if (queuedFiles.length === 0 || !confirmed) return;
+    if (queuedFiles.length === 0) return;
     setSubmitting(true);
     setError(null);
 
@@ -72,7 +75,7 @@ export const Register: React.FC = () => {
       for (const item of queuedFiles) {
         const res = await api.registerRecord({
           file: item.file,
-          title: item.file.name.replace(/\.[^/.]+$/, ''),
+          title: item.title,
           fileName: item.file.name,
           mime: item.file.type || 'application/octet-stream',
           size: item.file.size,
@@ -87,9 +90,18 @@ export const Register: React.FC = () => {
         });
         results.push(res);
       }
+
+      // If user selected auto-seal, finalize the batch immediately so proofs are ready
+      if (autoSeal && results.length > 0) {
+        try {
+          await api.sealBatch(results[0].batchId);
+        } catch (sealErr: any) {
+          console.warn('Auto-seal note:', sealErr.message);
+        }
+      }
+
       setRegisteredRecords(results);
       setQueuedFiles([]);
-      setConfirmed(false);
     } catch (err: any) {
       setError(err.message || 'Failed to register records to batch');
     } finally {
@@ -97,13 +109,43 @@ export const Register: React.FC = () => {
     }
   };
 
+  const handleDownloadProof = async (recordId: string, batchId: string) => {
+    setDownloadingProof(recordId);
+    try {
+      // If batch is still open, attempt to seal it first
+      try {
+        const proof = await api.getProof(recordId);
+        triggerProofDownload(recordId, proof);
+      } catch {
+        await api.sealBatch(batchId);
+        const proof = await api.getProof(recordId);
+        triggerProofDownload(recordId, proof);
+      }
+    } catch (err: any) {
+      alert(`Could not download proof: ${err.message}`);
+    } finally {
+      setDownloadingProof(null);
+    }
+  };
+
+  const triggerProofDownload = (recordId: string, proof: any) => {
+    const json = JSON.stringify(proof, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${recordId}.pcproof.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto space-y-8 font-sans">
       <div>
-        <div className="text-xs uppercase font-mono tracking-wider text-blue-600 font-bold">Side 1 · Registration</div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Register Institutional Records</h1>
+        <div className="text-xs uppercase font-mono tracking-wider text-blue-600 font-bold">Document Registration</div>
+        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Register & Secure Documents</h1>
         <p className="text-slate-600 text-sm mt-1">
-          Upload documents to register them in the next open Merkle batch. Client-side canonicalization & AI suggestions with mandatory human confirmation.
+          Upload any certificate, credential, or document to create an immutable cryptographic timestamp on the ledger.
         </p>
       </div>
 
@@ -120,68 +162,106 @@ export const Register: React.FC = () => {
           <Upload className="w-6 h-6" />
         </div>
         <div>
-          <h3 className="text-base font-bold text-slate-900">Select Documents to Register</h3>
-          <p className="text-xs text-slate-500 mt-1">PDFs, Certificates, Degree Audits, or Images (Up to 10 MB each)</p>
+          <h3 className="text-base font-bold text-slate-900">Select Files to Register</h3>
+          <p className="text-xs text-slate-500 mt-1">PDFs, Certificates, Diplomas, or Images (Up to 50 MB each)</p>
         </div>
-        <label className="inline-block px-5 py-2.5 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white text-xs font-semibold cursor-pointer border border-blue-200 transition-all shadow-xs">
-          Browse Files
+        <label className="inline-block px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold cursor-pointer shadow-sm transition-all">
+          Browse Documents
           <input type="file" multiple className="hidden" onChange={handleFileChange} />
         </label>
         {extracting && (
-          <div className="text-xs font-mono text-blue-600 animate-pulse pt-2">
-            Computing browser SHA-256 and running local AI categorization...
-          </div>
-        )}
-        {queuedFiles.length > 0 && !extracting && (
-          <div className="text-xs font-mono text-blue-700 font-semibold pt-2">
-            {queuedFiles.length} document(s) queued for hashing & metadata extraction
+          <div className="text-xs font-mono text-blue-600 animate-pulse pt-2 flex items-center justify-center gap-2">
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            Analyzing file and calculating cryptographic fingerprint...
           </div>
         )}
       </div>
 
-      {/* AI Extraction Preview & Human Confirmation */}
+      {/* Queued Documents Ready to Register */}
       {queuedFiles.length > 0 && (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-6 shadow-sm">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-blue-600" />
-              Local AI Metadata Extraction (Deterministic Rules / Naive Bayes)
+              <FileText className="w-4 h-4 text-blue-600" />
+              Document Details ({queuedFiles.length} file{queuedFiles.length > 1 ? 's' : ''})
             </h3>
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-semibold">
-              Rule R-B: Human in the Loop
+            <span className="text-xs text-slate-500">
+              SHA-256 fingerprint generated
             </span>
           </div>
 
-          <div className="space-y-3 font-mono text-xs">
+          <div className="space-y-3 text-xs">
             {queuedFiles.map((q, i) => (
-              <div key={i} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                <div>
-                  <div className="font-semibold text-slate-900">{q.file.name}</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
-                    Size: {(q.file.size / 1024).toFixed(1)} KB · Category: {q.category} ({Math.round(q.confidence * 100)}% conf)
+              <div key={i} className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-blue-600" />
+                    {q.file.name}
                   </div>
-                  <div className="text-[10px] text-slate-400 mt-0.5 font-mono truncate max-w-md">
-                    SHA-256: {q.contentHash}
+                  <span className="text-[11px] text-slate-500 font-mono">
+                    {(q.file.size / 1024).toFixed(1)} KB
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-slate-500">Document Title</label>
+                    <input
+                      type="text"
+                      value={q.title}
+                      onChange={(e) => {
+                        const updated = [...queuedFiles];
+                        updated[i].title = e.target.value;
+                        setQueuedFiles(updated);
+                      }}
+                      className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-800 text-xs focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-slate-500">Category</label>
+                    <input
+                      type="text"
+                      value={q.category}
+                      onChange={(e) => {
+                        const updated = [...queuedFiles];
+                        updated[i].category = e.target.value;
+                        setQueuedFiles(updated);
+                      }}
+                      className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-800 text-xs focus:ring-1 focus:ring-blue-500"
+                    />
                   </div>
                 </div>
-                <span className="px-2 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
-                  Suggested
-                </span>
+
+                <div className="text-[10px] text-slate-500 font-mono pt-1 truncate">
+                  SHA-256 Digest: {q.contentHash}
+                </div>
               </div>
             ))}
           </div>
 
-          {/* Mandatory Checkbox */}
-          <div className="pt-4 border-t border-slate-200">
-            <label className="flex items-start gap-3 cursor-pointer">
+          {/* User Confirmation & Auto-Seal Preferences */}
+          <div className="pt-2 border-t border-slate-200 space-y-3">
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoSeal}
+                onChange={(e) => setAutoSeal(e.target.checked)}
+                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-xs text-slate-700">
+                <strong>Seal batch immediately upon registration</strong> (Enables instant <code>.pcproof.json</code> proof download)
+              </span>
+            </label>
+
+            <label className="flex items-center gap-2.5 cursor-pointer">
               <input
                 type="checkbox"
                 checked={confirmed}
                 onChange={(e) => setConfirmed(e.target.checked)}
-                className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-xs text-slate-700 leading-relaxed">
-                <strong className="text-slate-900">I have reviewed and confirmed these metadata values.</strong> AI suggestions are purely assistive and have zero effect on cryptographic integrity proofs.
+              <span className="text-xs text-slate-600">
+                I confirm the accuracy of this document for immutable registration.
               </span>
             </label>
           </div>
@@ -189,57 +269,83 @@ export const Register: React.FC = () => {
           <button
             onClick={handleRegister}
             disabled={!confirmed || submitting}
-            className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 shadow-sm"
+            className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-40 shadow-sm"
           >
-            {submitting ? 'Registering into Open Batch...' : 'Confirm & Commit Records to Batch'}
+            {submitting ? 'Registering Document...' : 'Secure & Register Document Now'}
           </button>
         </div>
       )}
 
+      {/* Success View */}
       {registeredRecords.length > 0 && (
-        <div className="p-6 rounded-2xl bg-white border border-emerald-200 shadow-sm space-y-4">
-          <div className="flex items-center gap-2 text-emerald-700 font-bold text-sm">
+        <div className="p-6 rounded-2xl bg-white border border-emerald-200 shadow-sm space-y-5">
+          <div className="flex items-center gap-2.5 text-emerald-700 font-bold text-base">
             <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-            <span>Successfully registered {registeredRecords.length} record(s) into Batch {registeredRecords[0]?.batchId}!</span>
+            <span>Document Successfully Registered & Stored!</span>
           </div>
 
-          <div className="space-y-2 font-mono text-xs">
+          <div className="space-y-3 text-xs">
             {registeredRecords.map((r, i) => (
-              <div key={i} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div className="font-bold text-slate-900">Record ID: {r.recordId}</div>
-                  <div className="text-[11px] text-slate-500">Leaf Hash: {r.leafHash.slice(0, 24)}...</div>
+              <div key={i} className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="font-bold text-slate-900 text-sm">Record ID: {r.recordId}</div>
+                    <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                      Batch: {r.batchId} · Leaf Hash: {r.leafHash.slice(0, 24)}...
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold uppercase text-[10px]">
+                    Registered
+                  </span>
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200">
+                  {/* View Document Button */}
                   <a
                     href={`/api/records/${r.recordId}/file`}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-blue-50 text-blue-700 hover:text-blue-900 border border-blue-200 font-semibold text-xs shadow-2xs transition-all"
+                    title="View uploaded document"
                   >
                     <Eye className="w-3.5 h-3.5 text-blue-600" /> View Document
                   </a>
-                  <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-bold uppercase text-[10px]">
-                    {r.status}
-                  </span>
+
+                  {/* Download Proof Bundle */}
+                  <button
+                    onClick={() => handleDownloadProof(r.recordId, r.batchId)}
+                    disabled={downloadingProof === r.recordId}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-2xs transition-all disabled:opacity-50"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    {downloadingProof === r.recordId ? 'Exporting Proof...' : 'Download Proof (.pcproof.json)'}
+                  </button>
+
+                  {/* Verify Link */}
+                  <Link
+                    to="/verify"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-slate-600" /> Open Verifier
+                  </Link>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
-            <Link
-              to="/proofchain/batches"
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-2 transition-all shadow-sm"
-            >
-              <Layers className="w-4 h-4" /> Go to Batches & Seal Tree
-            </Link>
+          <div className="flex items-center gap-3 pt-1">
             <button
               onClick={() => setRegisteredRecords([])}
+              className="px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold transition-all border border-blue-200"
+            >
+              Register Another Document
+            </button>
+            <Link
+              to="/proofchain/batches"
               className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all"
             >
-              Register More Documents
-            </button>
+              View All Batches & Records
+            </Link>
           </div>
         </div>
       )}

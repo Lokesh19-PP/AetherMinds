@@ -160,11 +160,15 @@ export const Audit: React.FC = () => {
                     <td className="py-3.5 px-4 text-blue-700">
                       {issue.recordId || '—'}
                     </td>
-                    <td className="py-3.5 px-4 text-emerald-700 font-semibold" title={issue.expected}>
-                      {issue.expected.slice(0, 10)}...{issue.expected.slice(-8)}
+                    <td className="py-3.5 px-4 text-emerald-700 font-semibold" title={String(issue.expected ?? '')}>
+                      {String(issue.expected ?? '').length > 20
+                        ? `${String(issue.expected).slice(0, 10)}...${String(issue.expected).slice(-8)}`
+                        : String(issue.expected ?? '')}
                     </td>
-                    <td className="py-3.5 px-4 text-rose-600 font-bold" title={issue.found}>
-                      {issue.found.slice(0, 10)}...{issue.found.slice(-8)}
+                    <td className="py-3.5 px-4 text-rose-600 font-bold" title={String(issue.found ?? '')}>
+                      {String(issue.found ?? '').length > 20
+                        ? `${String(issue.found).slice(0, 10)}...${String(issue.found).slice(-8)}`
+                        : String(issue.found ?? '')}
                     </td>
                   </tr>
                 ))}

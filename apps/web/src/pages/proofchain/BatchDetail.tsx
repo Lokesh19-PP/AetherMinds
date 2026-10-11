@@ -289,36 +289,20 @@ export const BatchDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Interactive SVG Merkle Tree Component */}
-      <div className="space-y-3">
-        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-          <Layers className="w-5 h-5 text-blue-600" />
-          Interactive Merkle Tree Diagram
-        </h2>
-        {currentBatch.levels && currentBatch.levels.length > 0 ? (
-          <MerkleTree
-            levels={currentBatch.levels}
-            selectedLeafIndex={selectedLeaf}
-            onSelectLeaf={(idx) => setSelectedLeaf(idx)}
-          />
-        ) : (
-          <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl text-xs font-mono text-slate-500">
-            {isOpen
-              ? 'Merkle tree levels will be calculated as soon as the batch is sealed.'
-              : 'No Merkle levels available for this batch.'}
-          </div>
-        )}
-      </div>
-
-      {/* Records in Batch Table */}
+      {/* Records in Batch Table (Primary View) */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Layers className="w-4 h-4 text-blue-600" />
-            Records Registered in Batch ({currentBatch.records?.length || 0})
-          </h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Layers className="w-4 h-4 text-blue-600" />
+              Registered Documents ({currentBatch.records?.length || 0})
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Click "View Document" to inspect the original file or download the proof bundle for verification.
+            </p>
+          </div>
           <span className="text-xs font-mono text-slate-500">
-            {isOpen ? 'Seal batch to enable .pcproof.json export' : 'Download .pcproof.json for standalone verification'}
+            {isOpen ? 'Batch is Open · Seal to finalize' : 'Sealed & Ready for Verification'}
           </span>
         </div>
 
@@ -326,11 +310,11 @@ export const BatchDetail: React.FC = () => {
           <table className="w-full text-left text-xs font-mono">
             <thead className="bg-slate-50 text-slate-600 uppercase border-b border-slate-200">
               <tr>
-                <th className="py-3 px-3">Leaf Index</th>
+                <th className="py-3 px-3">#</th>
+                <th className="py-3 px-3">Document Title / File</th>
                 <th className="py-3 px-3">Record ID</th>
-                <th className="py-3 px-3">Description / Title</th>
-                <th className="py-3 px-3">Leaf Hash (SHA-256 0x00)</th>
-                <th className="py-3 px-3 text-right">Proof Bundle</th>
+                <th className="py-3 px-3">Cryptographic Leaf Hash</th>
+                <th className="py-3 px-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -345,42 +329,37 @@ export const BatchDetail: React.FC = () => {
                   <td className="py-3.5 px-3 font-bold text-blue-700">
                     #{rec.index}
                   </td>
-                  <td className="py-3.5 px-3 font-semibold text-slate-900">
-                    {rec.id}
+                  <td className="py-3.5 px-3 font-medium text-slate-900">
+                    <div className="font-semibold text-slate-900">{rec.title || rec.fileName || 'Institutional Document'}</div>
+                    {rec.fileName && rec.fileName !== rec.title && (
+                      <div className="text-[10px] text-slate-400 font-normal">{rec.fileName}</div>
+                    )}
                   </td>
-                  <td className="py-3.5 px-3 text-slate-800">
-                    {rec.title || 'Institutional Document'}
+                  <td className="py-3.5 px-3 font-mono text-slate-600">
+                    {rec.id.slice(0, 8)}...{rec.id.slice(-4)}
                   </td>
                   <td className="py-3.5 px-3 text-slate-500 font-mono" title={rec.leafHash}>
                     {rec.leafHash ? `${rec.leafHash.slice(0, 10)}...${rec.leafHash.slice(-8)}` : 'Pending'}
                   </td>
                   <td className="py-3.5 px-3 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      {rec.storageMode === 'copy' || rec.fileRef ? (
-                        <a
-                          href={`/api/records/${rec.id}/file`}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 transition-all font-semibold text-[11px] border border-slate-200"
-                          title="View or download original uploaded document"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-blue-600" /> View Document
-                        </a>
-                      ) : (
-                        <span
-                          className="text-[10px] text-slate-400 font-mono px-2 py-1 rounded bg-slate-50 border border-slate-200"
-                          title="This record was registered in Zero-Knowledge mode (hash-only). No file was stored on the server."
-                        >
-                          Hash Only
-                        </span>
-                      )}
+                      <a
+                        href={`/api/records/${rec.id}/file`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 transition-all font-semibold text-xs border border-slate-200 shadow-2xs"
+                        title="View or inspect original document"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-blue-600" /> View Document
+                      </a>
+
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDownloadProof(rec.id, rec.index);
                         }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white transition-all border border-blue-200 font-semibold text-[11px]"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white transition-all border border-blue-200 font-semibold text-xs shadow-2xs"
                       >
                         <Download className="w-3.5 h-3.5" /> {isOpen ? 'Seal & Export' : '.pcproof.json'}
                       </button>
@@ -391,6 +370,33 @@ export const BatchDetail: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Interactive Merkle Tree Component (Secondary / Collapsible) */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <Layers className="w-4 h-4 text-blue-600" />
+            Interactive Merkle Tree Visualization
+          </h2>
+          <span className="text-xs text-slate-500">
+            Click any leaf node in the diagram to inspect its path
+          </span>
+        </div>
+
+        {currentBatch.levels && currentBatch.levels.length > 0 ? (
+          <MerkleTree
+            levels={currentBatch.levels}
+            selectedLeafIndex={selectedLeaf}
+            onSelectLeaf={(idx) => setSelectedLeaf(idx)}
+          />
+        ) : (
+          <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-500">
+            {isOpen
+              ? 'Merkle tree levels will be calculated as soon as the batch is sealed.'
+              : 'No Merkle levels available for this batch.'}
+          </div>
+        )}
       </div>
     </div>
   );
