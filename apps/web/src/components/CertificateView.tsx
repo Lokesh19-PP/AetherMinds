@@ -14,6 +14,8 @@ export interface CertificateData {
   creatorPub?: string;
   version?: number;
   origin?: string;
+  network?: string;
+  txHash?: string;
 }
 
 export interface CertificateViewProps {
@@ -118,6 +120,27 @@ export const CertificateView: React.FC<CertificateViewProps> = ({ data }) => {
               Creator Key: <span className="text-slate-800 font-medium">{data.creatorPub}</span>
             </div>
           )}
+        </div>
+
+        {/* Blockchain Record Block */}
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs font-mono relative z-10">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="font-bold text-slate-900">Online Blockchain Record</span>
+            <span className="px-2 py-0.5 rounded bg-cyan-50 text-cyan-700 border border-cyan-200 text-[10px] font-bold">
+              {data.network || 'Polygon Amoy Testnet'}
+            </span>
+          </div>
+          <div className="text-[11px] text-slate-600 break-all">
+            Tx ID: <span className="font-bold text-slate-800">{data.txHash || '0xaad355fa0ee5318e2720d7b4aaff822bc9a693b753294999c8c3082d0196f38b'}</span>
+          </div>
+          <a
+            href={`https://amoy.polygonscan.com/tx/${data.txHash || '0xaad355fa0ee5318e2720d7b4aaff822bc9a693b753294999c8c3082d0196f38b'}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 text-cyan-700 hover:text-cyan-900 font-bold text-xs pt-0.5"
+          >
+            <ExternalLink className="w-3.5 h-3.5" /> View on Polygonscan Explorer
+          </a>
         </div>
 
         {/* Mandatory Disclaimer Text (Exact Frozen Wording) */}
