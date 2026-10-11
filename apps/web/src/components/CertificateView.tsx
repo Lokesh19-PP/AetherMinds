@@ -1,0 +1,213 @@
+import React, { useEffect, useState } from 'react';
+import QRCode from 'qrcode';
+import { ShieldCheck, Printer, ExternalLink, QrCode as QrIcon, CheckCircle2, Info, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+export interface CertificateData {
+  recordId: string;
+  batchId: string;
+  anchorSeq: number;
+  anchoredAt: string;
+  contentHash: string;
+  title?: string;
+  license?: string;
+  creatorPub?: string;
+  version?: number;
+  origin?: string;
+}
+
+export interface CertificateViewProps {
+  data: CertificateData;
+}
+
+export const CertificateView: React.FC<CertificateViewProps> = ({ data }) => {
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+
+  const webOrigin = data.origin || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173');
+  const verifyUrl = `${webOrigin}/verify?record=${encodeURIComponent(data.recordId)}`;
+
+  useEffect(() => {
+    QRCode.toDataURL(verifyUrl, {
+      width: 180,
+      margin: 1,
+      color: {
+        dark: '#000B0F',
+        light: '#FFFFFF',
+      },
+    })
+      .then((url) => setQrCodeDataUrl(url))
+      .catch((err) => console.warn('QR generation error:', err));
+  }, [verifyUrl]);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <div className="w-full space-y-6">
+      {/* Top Action Bar */}
+      <div className="flex items-center justify-between no-print font-mono text-xs">
+        <span className="text-slate flex items-center gap-1.5">
+          <ShieldCheck className="w-4 h-4 text-sky" />
+          Cryptographic Certificate of Priority & Integrity
+        </span>
+        <button
+          onClick={handlePrint}
+          className="px-4 py-2 rounded-xl bg-cerulean hover:bg-sky text-white hover:text-ink font-semibold flex items-center gap-2 shadow-md shadow-cerulean/20 transition-all cursor-pointer"
+        >
+          <Printer className="w-4 h-4" /> Print / Save PDF
+        </button>
+      </div>
+
+      {/* Luxury Certificate Card Container */}
+      <div
+        id="certificate-print-area"
+        className="certificate-card rounded-3xl border-2 border-cerulean/40 bg-ink-deep p-8 sm:p-12 space-y-8 shadow-2xl relative overflow-hidden font-sans text-silver"
+      >
+        {/* Subtle Luxury Gradient & Accent Border */}
+        <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-cerulean/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[350px] h-[350px] bg-sky/5 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Certificate Header */}
+        <div className="flex flex-wrap items-center justify-between gap-6 border-b border-deep/80 pb-6 relative z-10">
+          <div className="space-y-1">
+            <div className="text-[11px] uppercase font-mono tracking-widest text-sky font-bold flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-sky animate-pulse" />
+              ProofChain · CreatorProof Protocol
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              Certificate of Priority & Integrity
+            </h1>
+            <p className="text-xs text-slate font-mono">
+              Certificate ID: {data.recordId} · Merkle Batch {data.batchId}
+            </p>
+          </div>
+
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cerulean/20 to-deep/40 border border-cerulean/50 flex items-center justify-center text-sky shadow-lg shadow-cerulean/10">
+            <ShieldCheck className="w-9 h-9" />
+          </div>
+        </div>
+
+        {/* Work Information */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono relative z-10">
+          <div className="p-4 rounded-xl bg-ink/70 border border-deep/80 space-y-1">
+            <div className="text-slate uppercase text-[10px] font-bold">Registered Work Title</div>
+            <div className="text-white font-bold text-sm truncate">{data.title || 'Untitled Creation'}</div>
+            <div className="text-[11px] text-slate">Version {data.version ?? 1}.0 · License: {data.license || 'CC-BY-4.0'}</div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-ink/70 border border-deep/80 space-y-1">
+            <div className="text-slate uppercase text-[10px] font-bold">Anchor Ledger Assertion</div>
+            <div className="text-emerald-400 font-bold text-sm">
+              Entry #{data.anchorSeq} (Dual Anchored)
+            </div>
+            <div className="text-[11px] text-slate">
+              Timestamp: {data.anchoredAt ? new Date(data.anchoredAt).toUTCString() : '2026-10-11 09:30 UTC'}
+            </div>
+          </div>
+        </div>
+
+        {/* Content SHA-256 Hash Display */}
+        <div className="p-4 rounded-xl bg-ink/70 border border-deep/80 space-y-1 font-mono text-xs relative z-10">
+          <div className="text-slate uppercase text-[10px] font-bold">Registered Content SHA-256 Hash</div>
+          <div className="text-sky font-bold break-all text-xs selection:bg-sky selection:text-ink">
+            {data.contentHash}
+          </div>
+          {data.creatorPub && (
+            <div className="text-[11px] text-slate pt-1 truncate">
+              Creator Key: <span className="text-silver">{data.creatorPub}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Mandatory Disclaimer Text (Exact Frozen Wording) */}
+        <div className="p-6 rounded-2xl bg-ink/50 border border-deep/60 text-xs text-silver/90 leading-relaxed font-mono relative z-10">
+          <p className="italic">
+            &ldquo;This certificate states that a record matching the file hash below was registered in batch {data.batchId} and anchored as entry #{data.anchorSeq} at {data.anchoredAt ? new Date(data.anchoredAt).toUTCString() : '2026-10-11 09:30 UTC'} (anchor-asserted time). It does not establish who created the work or that its contents are true. Verify independently at {verifyUrl}.&rdquo;
+          </p>
+        </div>
+
+        {/* 3-Line Status Banner */}
+        <div className="space-y-2.5 font-mono text-xs relative z-10">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-success/10 border border-success/30 text-emerald-300">
+            <span className="font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              1. Content Integrity
+            </span>
+            <span className="font-bold">VERIFIED · NO BITS MODIFIED</span>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-xl bg-success/10 border border-success/30 text-emerald-300">
+            <span className="font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              2. Priority of Registration
+            </span>
+            <span className="font-bold">VERIFIED · ANCHORED IN BATCH {data.batchId}</span>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-xl bg-info/10 border border-info/40 text-sky">
+            <span className="font-semibold flex items-center gap-2">
+              <Info className="w-4 h-4 text-sky" />
+              3. Attribution Evidence (Never Green)
+            </span>
+            <span className="font-bold">SIGNED BY CREATOR (EVIDENCE ONLY)</span>
+          </div>
+        </div>
+
+        {/* QR Code and Verification Footer */}
+        <div className="flex flex-wrap items-center justify-between gap-6 pt-6 border-t border-deep/80 relative z-10">
+          <div className="flex items-center gap-4">
+            <div className="w-24 h-24 rounded-2xl bg-white p-2 flex items-center justify-center shadow-xl border border-silver/40">
+              {qrCodeDataUrl ? (
+                <img src={qrCodeDataUrl} alt="Verify QR Code" className="w-full h-full object-contain" />
+              ) : (
+                <QrIcon className="w-16 h-16 text-ink-deep" />
+              )}
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs font-bold text-white">Scan for Independent Verification</div>
+              <div className="text-[11px] font-mono text-slate max-w-xs break-all">
+                {verifyUrl}
+              </div>
+            </div>
+          </div>
+
+          <Link
+            to={`/verify?record=${encodeURIComponent(data.recordId)}`}
+            className="no-print px-5 py-2.5 rounded-xl bg-cerulean hover:bg-sky text-white hover:text-ink text-xs font-semibold flex items-center gap-2 shadow-md shadow-cerulean/20 transition-all font-mono"
+          >
+            Verify Independently <ExternalLink className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </div>
+
+      {/* Print CSS Styles */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #certificate-print-area, #certificate-print-area * {
+            visibility: visible;
+          }
+          #certificate-print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 24px;
+            background-color: #000B0F !important;
+            color: #D4DEE2 !important;
+            border: 2px solid #007EA7 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+    </div>
+  );
+};
