@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+artifacts/
+cache/
+typechain-types/
+coverage/
+.env
+.env.local
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
