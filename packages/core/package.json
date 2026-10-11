@@ -1,0 +1,19 @@
+{
+  "name": "@proofchain/core",
+  "version": "1.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.4.0",
+    "@noble/hashes": "^1.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  }
+}
