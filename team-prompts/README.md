@@ -12,7 +12,7 @@ All files in this folder contain **direct, copy-pasteable prompts** designed to 
 | **Shreyash** | `Shreyash` | [**`SHREYASH_PROMPTS.md`**](./SHREYASH_PROMPTS.md) | Anchor signed ledger (:4100), Witness (:4200), Registry DB & API (:4000), FileStore, and drift audit |
 | **Yash** | `Yash` | [**`YASH_PROMPTS.md`**](./YASH_PROMPTS.md) | Deterministic AI rules/Naive Bayes, Solidity smart contract (`RootAnchor.sol`), and CreatorProof routes |
 | **Sarthak** | `Sarthak` | [**`SARTHAK_PROMPTS.md`**](./SARTHAK_PROMPTS.md) | Frontend web app (`apps/web`), wiring Lovable components, state, client hashing, and APIs |
-| **Lovable UI** | `Sarthak` | [**`LOVABLE_PROMPTS.md`**](./LOVABLE_PROMPTS.md) | Ready-to-use Lovable prompts + **exact folder paths** to place the downloaded UI files |
+| **Stitch UI** | `Sarthak` | [**`STITCH_PROMPTS.md`**](./STITCH_PROMPTS.md) | Ready-to-use Google Stitch master prompt + **exact folder paths** to drop the UI files |
 | **Team Lead** | `main` | [**`INTEGRATION_PROMPT.md`**](./INTEGRATION_PROMPT.md) | **Final integration prompt** to paste into Antigravity when all members finish to merge & verify everything |
 
 ---

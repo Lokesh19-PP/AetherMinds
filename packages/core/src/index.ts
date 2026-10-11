@@ -1,6 +1,16 @@
-// @proofchain/core public exports
-export * from './canonical';
-export * from './manifest';
+// Core modules
+export * from './types.js';
+export * from './errors.js';
+export * from './bytes.js';
+export * from './canonical.js';
+export * from './hash.js';
+export * from './merkle.js';
+export * from './bundle.js';
+export * from './anchorEntry.js';
+export * from './manifest.js';
+
+// Types & backwards compatibility aliases for AI, Registry, and Contracts
+import type { ProofBundle, StepResult, VerifyResult, AnchorRef } from './types.js';
 
 export interface Bundle {
   format: string;
@@ -12,22 +22,6 @@ export interface Bundle {
   anchors: AnchorRef[];
   kind: 'file' | 'manifest';
   manifest?: Manifest;
-}
-
-export interface AnchorRef {
-  seq: number;
-  kind: 'ledger' | 'ethereum';
-}
-
-export interface AnchorEntry {
-  seq: number;
-  batchId: string;
-  root: string;
-  leafCount: number;
-  anchoredAt: string;
-  prevHash: string;
-  entryHash: string;
-  sig: string;
 }
 
 export interface Manifest {
@@ -42,41 +36,5 @@ export interface Manifest {
   signature: string;
 }
 
-export interface Step {
-  id: string;
-  label: string;
-  status: 'pass' | 'fail' | 'skipped' | 'warn';
-  detail?: string;
-}
-
-export interface VerifyResult {
-  verdict: 'VALID' | 'INVALID' | 'INCONCLUSIVE';
-  code: string;
-  steps: Step[];
-  warnings: string[];
-  registration?: {
-    batchId: string;
-    seq: number;
-    anchoredAt: string;
-    root: string;
-  };
-  attribution?: {
-    kind: 'none' | 'signed';
-    publicKey?: string;
-    signatureValid?: boolean;
-  };
-  message: string;
-}
-
-export class CoreError extends Error {
-  constructor(
-    public readonly code: string,
-    message?: string,
-  ) {
-    super(message ?? code);
-    this.name = 'CoreError';
-  }
-}
-
-// Re-export type so packages/ai can import it without depending on @noble directly
-export type { VerifyResult as VerifyResultType };
+export type Step = StepResult;
+export type VerifyResultType = VerifyResult;

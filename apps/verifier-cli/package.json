@@ -1,0 +1,19 @@
+{
+  "name": "@proofchain/verifier-cli",
+  "version": "1.1.0",
+  "type": "module",
+  "bin": {
+    "proofchain-verify": "./src/cli.ts"
+  },
+  "scripts": {
+    "verify": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@proofchain/core": "*",
+    "@proofchain/verifier": "*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.4"
+  }
+}

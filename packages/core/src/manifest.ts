@@ -1,50 +1,35 @@
 import { ed25519 } from '@noble/curves/ed25519';
 import { sha256 } from '@noble/hashes/sha256';
-import { canonicalJson } from './canonical';
+import { CreatorManifest } from './types.js';
+import { canonicalJson } from './canonical.js';
+import { utf8ToBytes, hexToBytes, bytesToHex, concatBytes } from './bytes.js';
+import { leafHash } from './hash.js';
 
-export interface CreatorManifest {
-  schema: string;
-  workId: string;
-  version: number;
-  parentLeaf: string | null;
-  fileHash: string;
-  fileName: string;
-  mime: string;
-  size: number;
-  title: string;
-  description?: string;
-  category: string;
-  tags?: string[];
-  license: string;
-  licenseText?: string | null;
-  creator: {
-    publicKey: string;
-    displayName?: string;
-  };
-  createdAtClaimed: string;
-  signature: string;
-}
+export type { CreatorManifest };
+export type UnsignedCreatorManifest = Omit<CreatorManifest, 'signature'>;
 
-export function manifestSigningBytes(manifest: Omit<CreatorManifest, 'signature'> | CreatorManifest): Uint8Array {
-  const copy = { ...manifest } as any;
-  delete copy.signature;
-  const canonical = canonicalJson(copy);
-  const text = `creatorproof/manifest/1\n${canonical}`;
-  return new TextEncoder().encode(text);
+const MANIFEST_SIGNING_PREFIX = utf8ToBytes('creatorproof/manifest/1\n');
+
+export function manifestSigningBytes(manifest: UnsignedCreatorManifest | CreatorManifest | Record<string, unknown>): Uint8Array {
+  const { signature: _, ...rest } = manifest as Record<string, unknown>;
+  const canonStr = canonicalJson(rest);
+  const canonBytes = utf8ToBytes(canonStr);
+  return concatBytes(MANIFEST_SIGNING_PREFIX, canonBytes);
 }
 
 export function signManifest(
-  manifest: Omit<CreatorManifest, 'signature'>,
+  manifest: UnsignedCreatorManifest | Omit<CreatorManifest, 'signature'>,
   privateKeyHex: string
 ): CreatorManifest {
-  const bytes = manifestSigningBytes(manifest);
-  const privKey = Buffer.from(privateKeyHex, 'hex');
-  const sigBytes = ed25519.sign(bytes, privKey);
-  const sigHex = Buffer.from(sigBytes).toString('hex');
+  const msgBytes = manifestSigningBytes(manifest);
+  const privKeyBytes = hexToBytes(privateKeyHex);
+  const sigBytes = ed25519.sign(msgBytes, privKeyBytes);
+  const signature = bytesToHex(sigBytes);
+
   return {
     ...manifest,
-    signature: sigHex,
-  };
+    signature
+  } as CreatorManifest;
 }
 
 export function verifyManifest(manifest: unknown): boolean {
@@ -58,16 +43,23 @@ export function verifyManifest(manifest: unknown): boolean {
   if (m.creator.publicKey.length !== 64) return false;
 
   try {
-    const bytes = manifestSigningBytes(m as CreatorManifest);
-    return ed25519.verify(m.signature, bytes, m.creator.publicKey);
+    const msgBytes = manifestSigningBytes(m as CreatorManifest);
+    const sigBytes = hexToBytes(m.signature);
+    const pubKeyBytes = hexToBytes(m.creator.publicKey);
+    return ed25519.verify(sigBytes, msgBytes, pubKeyBytes);
   } catch {
     return false;
   }
 }
 
+export function manifestLeafHash(manifest: CreatorManifest): string {
+  const canon = canonicalJson(manifest);
+  return leafHash(utf8ToBytes(canon));
+}
+
 export function hashManifest(manifest: CreatorManifest): string {
   const canonical = canonicalJson(manifest);
-  const bytes = new TextEncoder().encode(canonical);
+  const bytes = utf8ToBytes(canonical);
   const digest = sha256(bytes);
-  return Buffer.from(digest).toString('hex');
+  return bytesToHex(digest);
 }
