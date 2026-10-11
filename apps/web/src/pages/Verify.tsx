@@ -64,31 +64,31 @@ export const Verify: React.FC = () => {
     // Sample leaf hash
     const sampleLeaf = '2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae';
 
-    const sampleBundle: ProofBundle = {
-      version: 'proofchain/proof/1',
+    const sampleBundle: any = {
+      format: 'proofchain/proof/1',
+      recordKind: 'file',
       recordId: 'rec-sample-001',
       leafHash: sampleLeaf,
       leafIndex: 0,
       leafCount: 8,
       batchId: 'batch-001',
       path: [
-        { side: 'right', hash: 'fc46db4d687eed4291615d399f4d134fe60f10f022ac3bcd8b499bc42956cf35' },
-        { side: 'right', hash: '5858cfd7be8f24ecffb648f936353d2bf94943f550ffc17bfbf798363a23a3eb' },
-        { side: 'right', hash: '31846b02660d29ab997eb948b472ea63e18cfbf6e5b4b1a45cf2a4fe99238eb1' },
+        { side: 'R', hash: 'fc46db4d687eed4291615d399f4d134fe60f10f022ac3bcd8b499bc42956cf35' },
+        { side: 'R', hash: '5858cfd7be8f24ecffb648f936353d2bf94943f550ffc17bfbf798363a23a3eb' },
+        { side: 'R', hash: '31846b02660d29ab997eb948b472ea63e18cfbf6e5b4b1a45cf2a4fe99238eb1' },
       ],
       anchors: [
         {
-          type: 'ledger',
+          kind: 'ledger',
           seq: 1,
           root: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
           entryHash: 'f42b918a0029bc41...',
-          timestamp: '2026-10-11T09:30:00Z',
         },
         {
-          type: 'ethereum',
-          seq: 1,
-          root: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-          timestamp: '2026-10-11T09:30:00Z',
+          kind: 'ethereum',
+          chainId: 31337,
+          contract: '0x0000000000000000000000000000000000000000',
+          id: 1,
         },
       ],
     };
@@ -145,7 +145,7 @@ export const Verify: React.FC = () => {
         setAiExplanation(explainerRes.text);
       } catch {
         setAiExplanation(
-          result.ok
+          result.verdict === 'VALID'
             ? 'The document matches the registered leaf hash and the recomputed Merkle root matches the anchored published root across all independent trust layers.'
             : `Verification failed with code ${result.code}. The document or proof does not match published anchor state.`
         );
@@ -278,8 +278,8 @@ export const Verify: React.FC = () => {
           <ThreeLineResult
             result={verifyResult}
             batchId={bundleData?.batchId}
-            anchorSeq={bundleData?.anchors?.[0]?.seq || 1}
-            timestamp={bundleData?.anchors?.[0]?.timestamp}
+            anchorSeq={bundleData?.anchors?.[0]?.kind === 'ledger' ? bundleData.anchors[0].seq : 1}
+            timestamp={(bundleData?.anchors?.[0] as any)?.timestamp || (bundleData?.anchors?.[0] as any)?.anchoredAt}
             isManifest={bundleData?.recordKind === 'manifest'}
           />
 

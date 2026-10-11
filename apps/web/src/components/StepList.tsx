@@ -7,7 +7,7 @@ export interface StepListProps {
 }
 
 export const StepList: React.FC<StepListProps> = ({ steps }) => {
-  const renderStatusBadge = (status: StepResult['status'], code?: string) => {
+  const renderStatusBadge = (status: StepResult['status'] | 'skip', code?: string) => {
     switch (status) {
       case 'pass':
         return (
@@ -21,7 +21,8 @@ export const StepList: React.FC<StepListProps> = ({ steps }) => {
             <XCircle className="w-3 h-3" /> FAIL {code ? `(${code})` : ''}
           </span>
         );
-      case 'skip':
+      case 'skipped':
+      case 'skip' as any:
         return (
           <span className="px-2 py-0.5 rounded-full bg-deep/40 text-slate border border-deep text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
             <MinusCircle className="w-3 h-3" /> SKIP
@@ -68,15 +69,15 @@ export const StepList: React.FC<StepListProps> = ({ steps }) => {
                   {step.id}
                 </span>
                 <span className="font-semibold text-white text-xs">
-                  {step.name}
+                  {step.label || (step as any).name}
                 </span>
               </div>
-              <div>{renderStatusBadge(step.status, step.code)}</div>
+              <div>{renderStatusBadge(step.status, (step as any).code)}</div>
             </div>
 
-            {step.details && (
+            {(step.detail || (step as any).details) && (
               <div className="mt-1.5 text-[11px] text-slate pl-2 border-l border-deep/80 break-all">
-                {step.details}
+                {step.detail || (step as any).details}
               </div>
             )}
           </div>

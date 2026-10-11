@@ -86,7 +86,11 @@ export function getDb(customPath?: string): DatabaseSync {
   const targetPath = getDbPath(customPath);
   if (!defaultDb || currentDbPath !== targetPath) {
     if (defaultDb) {
-      defaultDb.close();
+      try {
+        defaultDb.close();
+      } catch {
+        // ignore already closed
+      }
     }
     defaultDb = initDatabase(targetPath);
   }
@@ -107,7 +111,11 @@ export function setDatabase(db: RegistryDB): void {
 
 export function closeDb(): void {
   if (defaultDb) {
-    defaultDb.close();
+    try {
+      defaultDb.close();
+    } catch {
+      // ignore already closed
+    }
     defaultDb = null;
     currentDbPath = null;
   }

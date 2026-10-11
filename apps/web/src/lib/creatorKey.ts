@@ -48,12 +48,19 @@ export function generateCreatorKey(): CreatorKeyPair {
   return keyPair;
 }
 
+function getStorage(): Storage | null {
+  if (typeof localStorage !== 'undefined') return localStorage;
+  if (typeof window !== 'undefined' && window.localStorage) return window.localStorage;
+  return null;
+}
+
 /**
  * Saves the key pair in browser localStorage.
  */
 export function saveKeyToStorage(keyPair: CreatorKeyPair): void {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    window.localStorage.setItem(
+  const storage = getStorage();
+  if (storage) {
+    storage.setItem(
       STORAGE_KEY,
       JSON.stringify(keyPair)
     );
@@ -64,11 +71,12 @@ export function saveKeyToStorage(keyPair: CreatorKeyPair): void {
  * Loads and validates a previously stored key pair.
  */
 export function loadKeyFromStorage(): CreatorKeyPair | null {
-  if (typeof window === 'undefined' || !window.localStorage) {
+  const storage = getStorage();
+  if (!storage) {
     return null;
   }
 
-  const raw = window.localStorage.getItem(STORAGE_KEY);
+  const raw = storage.getItem(STORAGE_KEY);
 
   if (!raw) {
     return null;

@@ -19,6 +19,11 @@ export const ThreeLineResult: React.FC<ThreeLineResultProps> = ({
   creatorPub,
   isManifest = false,
 }) => {
+  const isOk = result.verdict === 'VALID' || (result as any).ok === true;
+  const hasIntegrity = isOk || (!['DOC_MODIFIED', 'LEAF_MISMATCH', 'ROOT_MISMATCH'].includes(result.code));
+  const hasRegistration = isOk || (!['ANCHOR_INVALID', 'ANCHOR_DISAGREEMENT', 'WITNESS_MISMATCH', 'NOT_ANCHORED'].includes(result.code));
+  const hasAttribution = Boolean(result.attribution?.signatureValid || (result as any).attribution?.signatureValid);
+
   const displayTime = timestamp
     ? new Date(timestamp).toUTCString()
     : '2026-10-11 09:30 UTC';
@@ -34,12 +39,12 @@ export const ThreeLineResult: React.FC<ThreeLineResultProps> = ({
         </div>
         <span
           className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
-            result.ok
+            isOk
               ? 'bg-success/20 text-emerald-400 border border-success/40'
               : 'bg-danger/20 text-rose-400 border border-danger/40'
           }`}
         >
-          {result.ok ? 'VERIFIED · OK' : `REJECTED · ${result.code}`}
+          {isOk ? 'VERIFIED · OK' : `REJECTED · ${result.code}`}
         </span>
       </div>
 
@@ -47,13 +52,13 @@ export const ThreeLineResult: React.FC<ThreeLineResultProps> = ({
         {/* LINE 1: CONTENT INTEGRITY (Green or Red) */}
         <div
           className={`p-3.5 rounded-xl border flex items-start justify-between gap-3 ${
-            result.integrity
+            hasIntegrity
               ? 'bg-success/10 border-success/30 text-emerald-300'
               : 'bg-danger/10 border-danger/30 text-rose-300'
           }`}
         >
           <div className="flex items-start gap-2.5">
-            {result.integrity ? (
+            {hasIntegrity ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
             ) : (
               <XCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
@@ -63,27 +68,27 @@ export const ThreeLineResult: React.FC<ThreeLineResultProps> = ({
                 1. Content Integrity
               </div>
               <div className="text-[11px] text-silver/90 mt-0.5">
-                {result.integrity
+                {hasIntegrity
                   ? 'Matches the registered record. Zero bit rot or unauthorized alterations.'
                   : `Document bytes modified or proof corrupted (Code: ${result.code}).`}
               </div>
             </div>
           </div>
           <span className="font-extrabold uppercase text-[11px]">
-            {result.integrity ? 'PASS' : 'FAIL'}
+            {hasIntegrity ? 'PASS' : 'FAIL'}
           </span>
         </div>
 
         {/* LINE 2: PRIORITY OF REGISTRATION (Green or Red) */}
         <div
           className={`p-3.5 rounded-xl border flex items-start justify-between gap-3 ${
-            result.registration
+            hasRegistration
               ? 'bg-success/10 border-success/30 text-emerald-300'
               : 'bg-danger/10 border-danger/30 text-rose-300'
           }`}
         >
           <div className="flex items-start gap-2.5">
-            {result.registration ? (
+            {hasRegistration ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
             ) : (
               <XCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
@@ -93,21 +98,21 @@ export const ThreeLineResult: React.FC<ThreeLineResultProps> = ({
                 2. Priority of Registration
               </div>
               <div className="text-[11px] text-silver/90 mt-0.5">
-                {result.registration
+                {hasRegistration
                   ? `Batch ${batchId} · Anchor Entry #${anchorSeq} · Anchored ${displayTime} (anchor-asserted time).`
                   : 'Root mismatch or anchor ledger entry could not be authenticated.'}
               </div>
             </div>
           </div>
           <span className="font-extrabold uppercase text-[11px]">
-            {result.registration ? 'PASS' : 'FAIL'}
+            {hasRegistration ? 'PASS' : 'FAIL'}
           </span>
         </div>
 
         {/* LINE 3: ATTRIBUTION EVIDENCE (NEVER GREEN! Uses info #007EA7 / sky / warn) */}
         <div
           className={`p-3.5 rounded-xl border flex items-start justify-between gap-3 ${
-            isManifest && result.attribution
+            isManifest && hasAttribution
               ? 'bg-info/10 border-info/40 text-sky'
               : 'bg-deep/20 border-deep/60 text-silver/80'
           }`}
@@ -119,7 +124,7 @@ export const ThreeLineResult: React.FC<ThreeLineResultProps> = ({
                 3. Attribution Evidence (Never Green)
               </div>
               <div className="text-[11px] leading-relaxed mt-0.5">
-                {isManifest && result.attribution
+                {isManifest && hasAttribution
                   ? `Signed by key ${creatorPub ? `${creatorPub.slice(0, 14)}...` : '03a1...31b8'} (signature valid). The key holder's biological identity is not verified.`
                   : 'No creator signature in this record. Authorship is not established.'}
               </div>

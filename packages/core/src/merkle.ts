@@ -46,7 +46,21 @@ export function expectedPathLength(leafIndex: number, leafCount: number): number
   return steps;
 }
 
-export function proofFor(leafIndex: number, leavesOrLevels: string[] | string[][]): PathStep[] {
+export function proofFor(
+  arg1: number | string[] | string[][],
+  arg2: number | string[] | string[][]
+): PathStep[] {
+  let leafIndex: number;
+  let leavesOrLevels: string[] | string[][];
+
+  if (typeof arg1 === 'number') {
+    leafIndex = arg1;
+    leavesOrLevels = arg2 as string[] | string[][];
+  } else {
+    leavesOrLevels = arg1;
+    leafIndex = arg2 as number;
+  }
+
   let levels: string[][];
   if (Array.isArray(leavesOrLevels[0])) {
     levels = leavesOrLevels as string[][];

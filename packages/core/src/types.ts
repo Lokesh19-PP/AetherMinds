@@ -3,6 +3,8 @@ export interface PathStep {
   hash: string;
 }
 
+export type ProofPathStep = PathStep;
+
 export interface LedgerAnchorRef {
   kind: 'ledger';
   seq: number;

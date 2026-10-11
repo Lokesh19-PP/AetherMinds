@@ -13,6 +13,8 @@
     "test": "vitest run",
     "test:workspaces": "npm run test --workspaces --if-present",
     "seed": "tsx scripts/seed.ts",
+    "setup": "tsx scripts/setup.ts",
+    "demo:tamper": "tsx scripts/demoTamper.ts",
     "check:purity": "tsx scripts/checkVerifierPurity.ts"
   },
   "devDependencies": {

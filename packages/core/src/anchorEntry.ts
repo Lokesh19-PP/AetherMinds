@@ -30,10 +30,10 @@ export function entryHash(entry: UnsignedAnchorEntry): string {
   return sha256Hex(utf8ToBytes(canon));
 }
 
-export function signEntry(entry: UnsignedAnchorEntry, privateKeyHex: string): AnchorEntry {
+export function signEntry(entry: UnsignedAnchorEntry, privateKey: string | Uint8Array): AnchorEntry {
   const hash = entryHash(entry);
   const hashBytes = hexToBytes(hash);
-  const privKeyBytes = hexToBytes(privateKeyHex);
+  const privKeyBytes = typeof privateKey === 'string' ? hexToBytes(privateKey) : privateKey;
   const sigBytes = ed25519.sign(hashBytes, privKeyBytes);
   const sig = bytesToHex(sigBytes);
 
@@ -58,3 +58,6 @@ export function verifyEntrySignature(entry: AnchorEntry, publicKeyHex: string): 
     return false;
   }
 }
+
+export const verifyEntry = verifyEntrySignature;
+

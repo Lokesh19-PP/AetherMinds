@@ -92,23 +92,33 @@ export const NewWork: React.FC = () => {
   const handleSignManifest = () => {
     setIsSigning(true);
     try {
-      const unsignedManifest: Omit<CreatorManifest, 'signature'> = {
+      const unsignedManifest: any = {
         schema: 'creatorproof/manifest/1',
         workId,
         version: versionNumber,
-        parentLeaf: !isNewWork && parentLeaf ? parentLeaf : undefined,
+        parentLeaf: !isNewWork && parentLeaf ? parentLeaf : null,
         contentHash,
+        fileHash: contentHash,
+        fileName: file?.name || 'artwork.png',
+        mime: file?.type || 'application/octet-stream',
+        size: file?.size || 0,
         title: title || 'Untitled Work',
+        description: '',
         category,
         tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
-        license: license === 'CUSTOM' ? customLicense : license,
+        license: license as any,
+        licenseText: license === 'CUSTOM' ? customLicense : null,
+        creator: {
+          publicKey: keyPair.publicKey,
+        },
         creatorPub: keyPair.publicKey,
+        createdAtClaimed: new Date().toISOString(),
         timestamp: new Date().toISOString(),
       };
 
       const { signature } = signManifest(unsignedManifest);
 
-      const finalManifest: CreatorManifest = {
+      const finalManifest: any = {
         ...unsignedManifest,
         signature,
       };
