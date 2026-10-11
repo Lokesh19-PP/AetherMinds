@@ -11,49 +11,28 @@ export const Batches: React.FC = () => {
   const [showTokenModal, setShowTokenModal] = useState(false);
   const [tokenInput, setTokenInput] = useState('');
 
-  // Fallback demo batches if backend is currently offline
-  const fallbackBatches: BatchItem[] = [
-    {
-      id: 'batch-001',
-      status: 'anchored',
-      leafCount: 8,
-      root: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-      anchorSeq: 1,
-      ethAnchorId: 1,
-      ethTxHash: '0x8f2d593a11b65e90...9a4c',
-      sealedAt: '2026-10-11T09:30:00Z',
-    },
-    {
-      id: 'batch-002',
-      status: 'anchored',
-      leafCount: 8,
-      root: '7110eda4d09e062aa5e4a390b0a572ac0d2c0220da71a55d56d83a4e9dd3a4ac',
-      anchorSeq: 2,
-      ethAnchorId: 2,
-      ethTxHash: '0x3c9e12019fab0201...118b',
-      sealedAt: '2026-10-11T11:15:00Z',
-    },
-    {
-      id: 'batch-003',
-      status: 'open',
-      leafCount: 3,
-      root: 'pending_seal',
-      sealedAt: undefined,
-    },
-  ];
-
   const loadBatches = async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await api.getBatches();
-      if (Array.isArray(data) && data.length > 0) {
-        setBatches(data);
+      if (Array.isArray(data)) {
+        const normalized: BatchItem[] = data.map((b: any) => ({
+          id: b.id,
+          status: b.status,
+          leafCount: b.leaf_count ?? b.leafCount ?? 0,
+          root: b.root ?? 'pending_seal',
+          anchorSeq: b.anchor_seq ?? b.anchorSeq,
+          ethAnchorId: b.ethereum_anchor_id ?? b.ethAnchorId,
+          ethTxHash: b.ethereum_tx_hash ?? b.ethTxHash,
+          sealedAt: b.sealed_at ?? b.sealedAt,
+        }));
+        setBatches(normalized);
       } else {
-        setBatches(fallbackBatches);
+        setBatches([]);
       }
     } catch {
-      setBatches(fallbackBatches);
+      setBatches([]);
     } finally {
       setLoading(false);
     }

@@ -1,8 +1,41 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Layers, FileCheck, FileSearch, Shield, CheckCircle2, ArrowRight, Database, Blocks, FlaskConical } from 'lucide-react';
+import { Layers, FileCheck, FileSearch, Shield, CheckCircle2, ArrowRight, Database, Blocks, FlaskConical, RefreshCw } from 'lucide-react';
+import { api, BatchItem, HealthResponse } from '../../lib/api';
 
 export const Dashboard: React.FC = () => {
+  const [batches, setBatches] = useState<BatchItem[]>([]);
+  const [health, setHealth] = useState<HealthResponse | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [batchRes, healthRes] = await Promise.allSettled([
+        api.getBatches(),
+        api.getHealth(),
+      ]);
+
+      if (batchRes.status === 'fulfilled' && Array.isArray(batchRes.value)) {
+        setBatches(batchRes.value);
+      }
+      if (healthRes.status === 'fulfilled') {
+        setHealth(healthRes.value);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const sealedCount = batches.filter((b) => b.status === 'anchored' || b.status === 'sealed').length;
+  const totalRecords = batches.reduce((acc, b) => acc + (b.leafCount || (b as any).leaf_count || 0), 0);
+  const maxAnchorSeq = batches.reduce((max, b) => Math.max(max, (b as any).anchor_seq || b.anchorSeq || 0), 0);
+  const witnessOk = health?.witness?.consistent !== false;
+
   return (
     <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-10">
       {/* Header */}
@@ -15,6 +48,14 @@ export const Dashboard: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={loadData}
+            disabled={loading}
+            className="p-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 transition-all shadow-xs"
+            title="Refresh Metrics"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
           <Link
             to="/proofchain/register"
             className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold flex items-center gap-2 transition-all shadow-sm shadow-blue-500/20"
@@ -36,20 +77,28 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2 shadow-xs">
           <div className="text-slate-500 text-xs font-mono uppercase tracking-wider">Total Sealed Batches</div>
-          <div className="text-3xl font-extrabold text-slate-900 font-mono">2</div>
+          <div className="text-3xl font-extrabold text-slate-900 font-mono">
+            {loading ? '...' : sealedCount}
+          </div>
           <div className="text-xs text-emerald-600 font-semibold font-mono">Dual-Anchored (Ledger + Chain)</div>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2 shadow-xs">
           <div className="text-slate-500 text-xs font-mono uppercase tracking-wider">Registered Records</div>
-          <div className="text-3xl font-extrabold text-slate-900 font-mono">16</div>
+          <div className="text-3xl font-extrabold text-slate-900 font-mono">
+            {loading ? '...' : totalRecords}
+          </div>
           <div className="text-xs text-blue-600 font-semibold font-mono">Canonical RFC 6962 Leaves</div>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2 shadow-xs">
           <div className="text-slate-500 text-xs font-mono uppercase tracking-wider">Anchor Ledger Seq</div>
-          <div className="text-3xl font-extrabold text-slate-900 font-mono">#2</div>
-          <div className="text-xs text-emerald-600 font-semibold font-mono">Witness Anti-Fork: OK</div>
+          <div className="text-3xl font-extrabold text-slate-900 font-mono">
+            {loading ? '...' : `#${maxAnchorSeq}`}
+          </div>
+          <div className="text-xs text-emerald-600 font-semibold font-mono">
+            {witnessOk ? 'Witness Anti-Fork: OK' : 'Witness Warning'}
+          </div>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2 shadow-xs">

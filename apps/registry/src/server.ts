@@ -11,6 +11,10 @@ import { createBatchesRouter } from './routes/batches.js';
 import { createHealthRouter } from './routes/health.js';
 import { createAuditRouter } from './routes/audit.js';
 import { createDemoRouter } from './routes/demo.js';
+import { createManifestsRouter } from './routes/manifests.js';
+import { createWorksRouter } from './routes/works.js';
+import { createClaimsRouter } from './routes/claims.js';
+import { createAiRouter } from './routes/ai.js';
 
 dotenv.config();
 
@@ -44,6 +48,11 @@ export function createRegistryApp(options?: {
   app.use('/api/records', createRecordsRouter(db, fileStore));
   app.use('/api/batches', createBatchesRouter(db));
   app.use('/api/audit', createAuditRouter(db, fileStore));
+  app.use('/api/manifests', createManifestsRouter(() => db as any));
+  app.use('/api/works', createWorksRouter(() => db as any));
+  app.use('/api/claims', createClaimsRouter(() => db as any));
+  app.use('/api/ai', createAiRouter());
+  app.use('/api/extract', createAiRouter());
 
   // Mount Tamper Lab demo endpoints
   if (process.env.DEMO_MODE === 'true' || process.env.NODE_ENV === 'test') {

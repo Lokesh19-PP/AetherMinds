@@ -23,10 +23,10 @@ export const NewWork: React.FC = () => {
   const [checkingClaims, setCheckingClaims] = useState<boolean>(false);
 
   // Step 2: Details
-  const [title, setTitle] = useState<string>('AetherMinds Master Algorithm Blueprint');
-  const [description, setDescription] = useState<string>('Cryptographic architecture documentation and core verification specification.');
+  const [title, setTitle] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
   const [category, setCategory] = useState<string>('Digital Artwork');
-  const [tags, setTags] = useState<string>('cryptography, merkle-trees, rfc-6962, proofchain');
+  const [tags, setTags] = useState<string>('');
 
   // Step 3: License
   const [license, setLicense] = useState<string>('CC-BY-4.0');
@@ -53,6 +53,9 @@ export const NewWork: React.FC = () => {
     if (!selectedFile) return;
 
     setFile(selectedFile);
+    if (!title) {
+      setTitle(selectedFile.name.replace(/\.[^/.]+$/, ''));
+    }
     setHashing(true);
     setHashProgress(0);
 
@@ -95,10 +98,10 @@ export const NewWork: React.FC = () => {
         parentLeaf: !isNewWork && parentLeaf ? parentLeaf : null,
         contentHash,
         fileHash: contentHash,
-        fileName: file?.name || 'blueprint.pdf',
-        mime: file?.type || 'application/pdf',
-        size: file?.size || 1048576,
-        title: title || 'Untitled Work',
+        fileName: file?.name || 'asset',
+        mime: file?.type || 'application/octet-stream',
+        size: file?.size || 0,
+        title: title || file?.name || 'Untitled Work',
         description,
         category,
         tags: tags.split(',').map((t) => t.trim()).filter(Boolean),

@@ -5,6 +5,53 @@ export function createWorksRouter(dbGetter: () => RegistryDB = getDatabase): Rou
   const router = Router();
 
   /**
+   * GET /api/works
+   * Returns all registered creative works with latest version information.
+   */
+  router.get('/', (_req: Request, res: Response) => {
+    try {
+      const db = dbGetter();
+      const rows = db.prepare(`
+        SELECT 
+          r.work_id,
+          MAX(r.version_no) as max_version,
+          COUNT(*) as version_count,
+          MAX(r.created_at) as latest_created_at,
+          (SELECT title FROM records r2 WHERE r2.work_id = r.work_id ORDER BY r2.version_no DESC LIMIT 1) as raw_title,
+          (SELECT metadata_json FROM records r2 WHERE r2.work_id = r.work_id ORDER BY r2.version_no DESC LIMIT 1) as latest_meta,
+          (SELECT id FROM records r2 WHERE r2.work_id = r.work_id ORDER BY r2.version_no DESC LIMIT 1) as latest_record_id,
+          (SELECT batch_id FROM records r2 WHERE r2.work_id = r.work_id ORDER BY r2.version_no DESC LIMIT 1) as batch_id
+        FROM records r
+        WHERE r.work_id IS NOT NULL
+        GROUP BY r.work_id
+        ORDER BY latest_created_at DESC
+      `).all<any>();
+
+      const result = rows.map((r) => {
+        let title = r.raw_title;
+        if (!title && r.latest_meta) {
+          try {
+            const parsed = JSON.parse(r.latest_meta);
+            title = parsed.title;
+          } catch {}
+        }
+        return {
+          work_id: r.work_id,
+          max_version: r.max_version,
+          version_count: r.version_count,
+          latest_created_at: r.latest_created_at,
+          title: title || r.work_id,
+          latest_record_id: r.latest_record_id,
+          batch_id: r.batch_id,
+        };
+      });
+      return res.json(result);
+    } catch (err: any) {
+      return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
+    }
+  });
+
+  /**
    * GET /api/works/:workId
    * 
    * Returns creation trail: all versions linked via parentLeaf,

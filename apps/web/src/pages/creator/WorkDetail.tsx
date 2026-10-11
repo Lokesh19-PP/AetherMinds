@@ -13,25 +13,6 @@ export const WorkDetail: React.FC = () => {
   const [versions, setVersions] = useState<WorkVersion[]>([]);
   const [claims, setClaims] = useState<ClaimItem[]>([]);
 
-  // Realistic fallback demo creation trail data
-  const fallbackVersions: WorkVersion[] = [
-    {
-      version: 2,
-      recordId: 'rec-002',
-      leafHash: '7110eda4d09e062aa5e4a390b0a572ac0d2c0220da71a55d56d83a4e9dd3a4ac',
-      parentLeaf: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-      status: 'anchored',
-      anchoredAt: '2026-10-11T11:15:00Z',
-    },
-    {
-      version: 1,
-      recordId: 'rec-001',
-      leafHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-      status: 'anchored',
-      anchoredAt: '2026-10-11T09:30:00Z',
-    },
-  ];
-
   const loadWorkData = async () => {
     setLoading(true);
     try {
@@ -45,10 +26,10 @@ export const WorkDetail: React.FC = () => {
           }
         }
       } else {
-        setVersions(fallbackVersions);
+        setVersions([]);
       }
     } catch {
-      setVersions(fallbackVersions);
+      setVersions([]);
     } finally {
       setLoading(false);
     }

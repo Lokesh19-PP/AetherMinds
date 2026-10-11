@@ -12,72 +12,38 @@ export const BatchDetail: React.FC = () => {
   const [selectedLeaf, setSelectedLeaf] = useState<number>(0);
 
   // High fidelity fallback levels (RFC 6962 8-leaf Merkle Tree)
-  const defaultFallbackBatch: BatchDetailResponse = {
-    id: id || 'batch-001',
-    status: 'anchored',
-    leafCount: 8,
-    root: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-    anchorSeq: 1,
-    ethAnchorId: 1,
-    ethTxHash: '0x8f2d593a11b65e90df3a1a4c9b109e20a9bf4c8996fb92427ae41e4649b934ca',
-    sealedAt: '2026-10-11T09:30:00Z',
-    records: [
-      { id: 'rec-001', leafHash: '2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae', index: 0, title: 'Degree Certificate - Computer Science', status: 'anchored' },
-      { id: 'rec-002', leafHash: 'fc46db4d687eed4291615d399f4d134fe60f10f022ac3bcd8b499bc42956cf35', index: 1, title: 'Official Grade Transcript 2026', status: 'anchored' },
-      { id: 'rec-003', leafHash: '11a4a60b518f6922cb54b4231b409743c3d0b2f0a12e23a49219b21f3f3a8b41', index: 2, title: 'Digital Artwork Genesis Manifest', status: 'anchored' },
-      { id: 'rec-004', leafHash: '8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4', index: 3, title: 'Music Stem Master Agreement', status: 'anchored' },
-      { id: 'rec-005', leafHash: 'a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e', index: 4, title: 'Municipal Property Deed #8812', status: 'anchored' },
-      { id: 'rec-006', leafHash: '4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865', index: 5, title: 'Research Lab Dataset Checksum', status: 'anchored' },
-      { id: 'rec-007', leafHash: '53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3', index: 6, title: 'Patent Application Specification', status: 'anchored' },
-      { id: 'rec-008', leafHash: 'ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d', index: 7, title: 'Cryptographic Security Audit Log', status: 'anchored' },
-    ],
-    levels: [
-      // Level 0: 8 leaves
-      [
-        '2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae',
-        'fc46db4d687eed4291615d399f4d134fe60f10f022ac3bcd8b499bc42956cf35',
-        '11a4a60b518f6922cb54b4231b409743c3d0b2f0a12e23a49219b21f3f3a8b41',
-        '8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4',
-        'a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e',
-        '4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865',
-        '53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3',
-        'ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d',
-      ],
-      // Level 1: 4 nodes
-      [
-        '6d2460a80e046c4f8bf0df7b1f6924b89efc1a932c02c63866ac4d058a9e1021',
-        '5858cfd7be8f24ecffb648f936353d2bf94943f550ffc17bfbf798363a23a3eb',
-        'b7987cc142c14041b392437651a56da6c84c7dd88405b0a31eb2797e59b9776b',
-        '4c919d6a267d28c8d37446bc6d013f9f257d07936efc991a0c4f8a97f2619736',
-      ],
-      // Level 2: 2 nodes
-      [
-        '968434778beeaec45037dd78edfe35eb7b309f7a552e69cd18cb14ef4b7910ff',
-        '31846b02660d29ab997eb948b472ea63e18cfbf6e5b4b1a45cf2a4fe99238eb1',
-      ],
-      // Level 3: 1 root
-      [
-        'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-      ],
-    ],
-  };
-
   useEffect(() => {
     const loadDetail = async () => {
       setLoading(true);
       try {
         if (id) {
           const data = await api.getBatchDetail(id);
-          if (data && data.levels && data.levels.length > 0) {
-            setBatch(data);
-          } else {
-            setBatch(defaultFallbackBatch);
+          if (data) {
+            const raw = data as any;
+            const records = (data.records || []).map((r: any, idx: number) => ({
+              id: r.id,
+              leafHash: r.leaf_hash || r.leafHash || '',
+              index: r.leaf_index !== undefined ? r.leaf_index : idx,
+              title: r.title || 'Institutional Document',
+              status: r.status || data.status || 'anchored',
+            }));
+
+            setBatch({
+              id: data.id,
+              status: data.status,
+              leafCount: raw.leaf_count ?? data.leafCount ?? records.length,
+              root: data.root ?? 'pending_seal',
+              anchorSeq: raw.anchor_seq ?? data.anchorSeq ?? 1,
+              ethAnchorId: raw.ethereum_anchor_id ?? data.ethAnchorId,
+              ethTxHash: raw.ethereum_tx_hash ?? data.ethTxHash,
+              sealedAt: raw.sealed_at ?? data.sealedAt,
+              records,
+              levels: data.levels || [],
+            });
           }
-        } else {
-          setBatch(defaultFallbackBatch);
         }
       } catch {
-        setBatch(defaultFallbackBatch);
+        // Keep null if error
       } finally {
         setLoading(false);
       }
@@ -94,44 +60,63 @@ export const BatchDetail: React.FC = () => {
     }
   };
 
-  const handleDownloadProof = (recordId: string, index: number) => {
-    const proofBundle = {
-      format: 'proofchain/proof/1',
-      recordKind: 'file',
-      batchId: batch?.id || 'batch-001',
-      leafIndex: index,
-      leafCount: batch?.leafCount || 8,
-      leafHash: batch?.records?.[index]?.leafHash || '',
-      path: [
-        { side: 'R', hash: batch?.levels?.[0]?.[index ^ 1] || '' },
-      ],
-      anchors: [
-        {
-          kind: 'ledger',
-          seq: batch?.anchorSeq ?? 1,
-          url: 'http://localhost:4100',
-          entryHash: 'f42b918a...',
-        },
-        {
-          kind: 'ethereum',
-          chainId: 31337,
-          contract: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
-          id: batch?.ethAnchorId ?? 1,
-          txHash: batch?.ethTxHash ?? '0x8f2d...',
-        },
-      ],
-    };
-
-    const blob = new Blob([JSON.stringify(proofBundle, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${recordId}.pcproof.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleDownloadProof = async (recordId: string, index: number) => {
+    try {
+      const proof = await api.getProof(recordId);
+      const json = JSON.stringify(proof, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${recordId}.pcproof.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`Proof download failed: ${err?.message || 'Proof cannot be generated until batch is sealed'}`);
+    }
   };
 
-  const currentBatch = batch || defaultFallbackBatch;
+  if (loading) {
+    return (
+      <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 font-sans">
+        <Link
+          to="/proofchain/batches"
+          className="inline-flex items-center gap-2 text-xs font-mono text-slate-500 hover:text-blue-600 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Batches List
+        </Link>
+        <div className="p-12 text-center bg-white border border-slate-200 rounded-2xl">
+          <RefreshCw className="w-6 h-6 text-blue-600 animate-spin mx-auto" />
+          <div className="text-xs font-mono text-slate-600 mt-2">Loading batch from live registry...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!batch) {
+    return (
+      <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 font-sans">
+        <Link
+          to="/proofchain/batches"
+          className="inline-flex items-center gap-2 text-xs font-mono text-slate-500 hover:text-blue-600 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Batches List
+        </Link>
+        <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl space-y-3">
+          <h2 className="text-base font-bold text-slate-900">Batch Not Found</h2>
+          <p className="text-xs font-mono text-slate-500">Batch {id} does not exist in registry.</p>
+          <Link
+            to="/proofchain/batches"
+            className="inline-block px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold"
+          >
+            Return to Batches
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const currentBatch = batch;
 
   return (
     <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 font-sans">

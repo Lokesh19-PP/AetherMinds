@@ -1,46 +1,56 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertCircle, RefreshCw } from 'lucide-react';
 import { CertificateView, CertificateData } from '../../components/CertificateView';
 import { api } from '../../lib/api';
 
 export const Certificate: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const recordId = id || 'rec-001';
+  const recordId = id || '';
 
   const [loading, setLoading] = useState<boolean>(true);
-  const [certData, setCertData] = useState<CertificateData>({
-    recordId,
-    batchId: 'batch-001',
-    anchorSeq: 1,
-    anchoredAt: '2026-10-11T09:30:00Z',
-    contentHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-    title: 'AetherMinds Master Algorithm Blueprint',
-    license: 'CC-BY-4.0',
-    creatorPub: 'ed25519:7b3a9c81928374a56b1029384756c01928374650192837465a01928374659102',
-    version: 1,
-  });
+  const [certData, setCertData] = useState<CertificateData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!recordId) {
+      setLoading(false);
+      setError('No record ID specified.');
+      return;
+    }
+
     const fetchRecord = async () => {
       setLoading(true);
+      setError(null);
       try {
         const record = await api.getRecord(recordId);
         if (record) {
+          const recAny = record as any;
+          let meta: any = {};
+          if (typeof recAny.metadata === 'object' && recAny.metadata !== null) {
+            meta = recAny.metadata;
+          } else if (typeof recAny.metadata_json === 'string') {
+            try {
+              meta = JSON.parse(recAny.metadata_json);
+            } catch {}
+          }
+
           setCertData({
-            recordId: record.recordId,
-            batchId: record.batchId || 'batch-001',
-            anchorSeq: 1,
-            anchoredAt: record.createdAt || '2026-10-11T09:30:00Z',
-            contentHash: record.leafHash || certData.contentHash,
-            title: 'AetherMinds Master Algorithm Blueprint',
-            license: 'CC-BY-4.0',
-            creatorPub: certData.creatorPub,
-            version: 1,
+            recordId: recAny.id || recAny.recordId || recordId,
+            batchId: recAny.batch_id || recAny.batchId || 'b-0001',
+            anchorSeq: recAny.anchor_seq || 1,
+            anchoredAt: recAny.anchoredAt || recAny.created_at || new Date().toISOString(),
+            contentHash: recAny.content_hash || recAny.leaf_hash || recAny.leafHash || '',
+            title: meta.title || recAny.title || 'Creative Work Certificate',
+            license: meta.license || recAny.license || 'CC-BY-4.0',
+            creatorPub: recAny.creator_pub || recAny.creatorPub || '',
+            version: recAny.version_no || recAny.version || 1,
           });
+        } else {
+          setError('Record not found.');
         }
-      } catch {
-        // Fallback to default certData
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch certificate details.');
       } finally {
         setLoading(false);
       }
@@ -58,8 +68,29 @@ export const Certificate: React.FC = () => {
         <ArrowLeft className="w-4 h-4" /> Back to Creator Studio
       </Link>
 
+      {loading && (
+        <div className="p-12 text-center space-y-3 bg-white border border-slate-200 rounded-2xl">
+          <RefreshCw className="w-6 h-6 text-blue-600 animate-spin mx-auto" />
+          <div className="text-xs font-mono text-slate-600">Loading certificate data from registry...</div>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="p-8 text-center space-y-4 bg-white border border-red-200 rounded-2xl">
+          <AlertCircle className="w-8 h-8 text-red-500 mx-auto" />
+          <h2 className="text-base font-bold text-slate-900">Certificate Unavailable</h2>
+          <p className="text-xs font-mono text-slate-600 max-w-md mx-auto">{error}</p>
+          <Link
+            to="/creator"
+            className="inline-block px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold"
+          >
+            Return to Creator Studio
+          </Link>
+        </div>
+      )}
+
       {/* Render Certificate View */}
-      <CertificateView data={certData} />
+      {certData && !loading && <CertificateView data={certData} />}
     </div>
   );
 };

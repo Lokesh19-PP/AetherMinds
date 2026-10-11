@@ -10,6 +10,12 @@ import { generateProofBundle, ProofServiceError } from '../services/proofService
 export function createRecordsRouter(db: DatabaseSync, fileStore: FileStore): express.Router {
   const router = express.Router();
 
+  // GET /api/records
+  router.get('/', (_req: Request, res: Response) => {
+    const records = db.prepare('SELECT id, batch_id, leaf_index, leaf_hash, content_hash, kind, title, storage_mode, created_at FROM records ORDER BY created_at DESC LIMIT 50').all();
+    return res.json(records);
+  });
+
   // POST /api/records
   router.post('/', requireIssuerAuth, async (req: Request, res: Response) => {
     const {

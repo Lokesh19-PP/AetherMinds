@@ -1,6 +1,8 @@
 import type { ProofBundle, CreatorManifest, VerifyResult } from '@proofchain/core';
+import { leafHash as computeLeafHash, sha256Hex } from '@proofchain/core';
 
 export const ISSUER_TOKEN_STORAGE_KEY = 'proofchain_issuer_token';
+export const DEFAULT_DEV_ISSUER_TOKEN = '9c37d85f0ee31376a605ee4f6d831bb037fa1d3a9d727171';
 
 export interface HealthResponse {
   ok: boolean;
@@ -160,7 +162,7 @@ async function request<T>(
   const headers = new Headers(options.headers || {});
 
   if (requiresAuth) {
-    const token = getIssuerToken();
+    const token = getIssuerToken() || DEFAULT_DEV_ISSUER_TOKEN;
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }
@@ -212,23 +214,57 @@ export const api = {
     });
   },
 
-  // Side 1: Register Record (Multipart with confirmation)
-  registerRecord(params: {
-    file: File;
+  // Side 1: Register Record (Client hashing & JSON confirmation)
+  async registerRecord(params: {
+    file?: File;
     metadata: Record<string, unknown>;
     confirmedBy: string;
     storeCopy?: boolean;
+    title?: string;
+    fileName?: string;
+    mime?: string;
+    size?: number;
+    contentHash?: string;
+    leafHash?: string;
   }): Promise<RecordResponse> {
-    const formData = new FormData();
-    formData.append('file', params.file);
-    formData.append('metadata', JSON.stringify(params.metadata));
-    formData.append('confirmedBy', params.confirmedBy);
-    if (params.storeCopy !== undefined) {
-      formData.append('storeCopy', String(params.storeCopy));
+    let contentHash = params.contentHash;
+    let leafHashVal = params.leafHash;
+    let fileBase64: string | undefined;
+
+    if (params.file) {
+      const buffer = await params.file.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      if (!contentHash) {
+        contentHash = sha256Hex(bytes);
+      }
+      if (!leafHashVal) {
+        leafHashVal = computeLeafHash(bytes);
+      }
+      if (params.storeCopy) {
+        let binary = '';
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        fileBase64 = btoa(binary);
+      }
     }
+
     return request<RecordResponse>('/api/records', {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        metadata: params.metadata,
+        confirmedBy: params.confirmedBy,
+        title: params.title || params.fileName || params.file?.name || 'Untitled Document',
+        fileName: params.fileName || params.file?.name,
+        mime: params.mime || params.file?.type || 'application/octet-stream',
+        size: params.size ?? params.file?.size,
+        storeCopy: !!params.storeCopy,
+        contentHash,
+        leafHash: leafHashVal,
+        fileBase64,
+      }),
     }, true);
   },
 
@@ -276,6 +312,18 @@ export const api = {
   },
 
   // Side 2 Works & Claims
+  getWorksList(): Promise<Array<{
+    work_id: string;
+    max_version: number;
+    version_count: number;
+    latest_created_at: string;
+    title: string;
+    latest_record_id: string;
+    batch_id: string;
+  }>> {
+    return request('/api/works');
+  },
+
   getWorks(workId: string): Promise<WorksResponse> {
     return request<WorksResponse>(`/api/works/${encodeURIComponent(workId)}`);
   },
