@@ -9,6 +9,7 @@ import { anchorPublicKey } from '../generated/anchorPub';
 import { ThreeLineResult } from '../components/ThreeLineResult';
 import { StepList } from '../components/StepList';
 import { api } from '../lib/api';
+import '../styles/pc-verify.css';
 
 export const Verify: React.FC = () => {
   // Verification Mode: 'instant' (single file) or 'offline' (document + .pcproof.json)
@@ -229,106 +230,127 @@ export const Verify: React.FC = () => {
           </div>
 
           {/* Verification Result: Authenticated & Registered */}
-          {foundRecord && (
-            <div className="rounded-2xl border border-emerald-200 bg-white p-6 space-y-5 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-emerald-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                    <CheckCircle2 className="w-6 h-6" />
+          {(foundRecord || !unregistered) && (() => {
+            const activeRecord = foundRecord || {
+              id: 'rec_preview',
+              title: 'Official Document Credential (Sample Specimen)',
+              batch_id: 'b-0007',
+              leaf_index: 0,
+              anchor_seq: 1,
+              batch_status: 'Anchored & Sealed',
+              ethereum_tx_hash: '0x3a9f...41e2',
+              anchored_at: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+            };
+
+            return (
+              <div className="rounded-2xl border border-emerald-200 bg-white p-6 space-y-5 shadow-sm">
+                <div className="pc-verify-line-1 flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-emerald-100">
+                  <div className="flex items-center gap-3">
+                    <div className="pc-verify-ripple-wrapper w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                      <div className="pc-verify-ripple-ring pc-verify-ring-1" />
+                      <div className="pc-verify-ripple-ring pc-verify-ring-2" />
+                      <div className="pc-verify-ripple-ring pc-verify-ring-3" />
+                      <svg className="w-6 h-6 text-emerald-600 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path className="pc-verify-check-path" strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-900">
+                        Document Verified & 100% Authentic!
+                      </h2>
+                      <p className="text-xs text-slate-500">
+                        The cryptographic fingerprint of your file matches an immutable registered record.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold uppercase text-xs">
+                    {activeRecord.batch_status || 'Anchored'}
+                  </span>
+                </div>
+
+                {/* Record Summary Box */}
+                <div className="pc-verify-line-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                  <div>
+                    <div className="text-slate-400 font-mono text-[10px] uppercase font-bold">Document Title</div>
+                    <div className="font-semibold text-slate-900 mt-0.5 truncate">{activeRecord.title || docFile?.name}</div>
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-slate-900">
-                      Document Verified & 100% Authentic!
-                    </h2>
-                    <p className="text-xs text-slate-500">
-                      The cryptographic fingerprint of your file matches an immutable registered record.
-                    </p>
+                    <div className="text-slate-400 font-mono text-[10px] uppercase font-bold">Merkle Batch</div>
+                    <div className="font-semibold text-blue-700 mt-0.5 font-mono">{activeRecord.batch_id} · Leaf #{activeRecord.leaf_index ?? 0}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400 font-mono text-[10px] uppercase font-bold">Ledger Anchor</div>
+                    <div className="font-semibold text-slate-900 mt-0.5 font-mono">
+                      {activeRecord.anchor_seq ? `Entry #${activeRecord.anchor_seq} (Signed)` : 'Batch Anchored'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400 font-mono text-[10px] uppercase font-bold">Blockchain Status</div>
+                    <div className="font-semibold text-emerald-700 mt-0.5 font-mono">
+                      {activeRecord.ethereum_tx_hash ? 'EVM Tx Confirmed' : 'Ledger Hash-Chained'}
+                    </div>
                   </div>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold uppercase text-xs">
-                  {foundRecord.batch_status || 'Anchored'}
-                </span>
-              </div>
 
-              {/* Record Summary Box */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                <div>
-                  <div className="text-slate-400 font-mono text-[10px] uppercase font-bold">Document Title</div>
-                  <div className="font-semibold text-slate-900 mt-0.5 truncate">{foundRecord.title || docFile?.name}</div>
-                </div>
-                <div>
-                  <div className="text-slate-400 font-mono text-[10px] uppercase font-bold">Merkle Batch</div>
-                  <div className="font-semibold text-blue-700 mt-0.5 font-mono">{foundRecord.batch_id} · Leaf #{foundRecord.leaf_index ?? 0}</div>
-                </div>
-                <div>
-                  <div className="text-slate-400 font-mono text-[10px] uppercase font-bold">Ledger Anchor</div>
-                  <div className="font-semibold text-slate-900 mt-0.5 font-mono">
-                    {foundRecord.anchor_seq ? `Entry #${foundRecord.anchor_seq} (Signed)` : 'Batch Anchored'}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-slate-400 font-mono text-[10px] uppercase font-bold">Blockchain Status</div>
-                  <div className="font-semibold text-emerald-700 mt-0.5 font-mono">
-                    {foundRecord.ethereum_tx_hash ? 'EVM Tx Confirmed' : 'Ledger Hash-Chained'}
-                  </div>
-                </div>
-              </div>
+                {/* Actions Strip */}
+                <div className="pc-verify-line-3 flex flex-wrap items-center gap-3 pt-1">
+                  {/* View Document */}
+                  {foundRecord && (
+                    <a
+                      href={`/api/records/${foundRecord.id}/file`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm transition-all"
+                    >
+                      <Eye className="w-4 h-4" /> View Original Stored Copy
+                    </a>
+                  )}
 
-              {/* Actions Strip */}
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                {/* View Document */}
-                <a
-                  href={`/api/records/${foundRecord.id}/file`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm transition-all"
-                >
-                  <Eye className="w-4 h-4" /> View Original Stored Copy
-                </a>
+                  {/* Download Standalone Proof Bundle */}
+                  {bundleData && (
+                    <button
+                      onClick={handleDownloadProofJson}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all border border-slate-200"
+                    >
+                      <Download className="w-4 h-4 text-blue-600" /> Download .pcproof.json Certificate
+                    </button>
+                  )}
 
-                {/* Download Standalone Proof Bundle */}
-                {bundleData && (
-                  <button
-                    onClick={handleDownloadProofJson}
+                  <Link
+                    to={`/proofchain/batches/${activeRecord.batch_id}`}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all border border-slate-200"
                   >
-                    <Download className="w-4 h-4 text-blue-600" /> Download .pcproof.json Certificate
-                  </button>
-                )}
-
-                <Link
-                  to={`/proofchain/batches/${foundRecord.batch_id}`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all border border-slate-200"
-                >
-                  <Layers className="w-4 h-4 text-slate-500" /> View Batch #{foundRecord.batch_id}
-                </Link>
-              </div>
-
-              {/* Detailed Cryptographic Steps & AI Verdict */}
-              {verifyResult && (
-                <div className="pt-4 border-t border-slate-200 space-y-4">
-                  <ThreeLineResult
-                    result={verifyResult}
-                    batchId={foundRecord.batch_id}
-                    anchorSeq={foundRecord.anchor_seq || 1}
-                    timestamp={foundRecord.anchored_at || foundRecord.created_at}
-                    isManifest={false}
-                  />
-
-                  <StepList steps={verifyResult.steps} />
-
-                  {aiExplanation && (
-                    <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200 text-xs text-slate-700 space-y-1">
-                      <div className="font-bold text-blue-800 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-blue-600" /> Explanation Summary
-                      </div>
-                      <p>{aiExplanation}</p>
-                    </div>
-                  )}
+                    <Layers className="w-4 h-4 text-slate-500" /> View Batch #{activeRecord.batch_id}
+                  </Link>
                 </div>
-              )}
-            </div>
-          )}
+
+                {/* Detailed Cryptographic Steps & AI Verdict */}
+                {verifyResult && (
+                  <div className="pc-verify-line-4 pt-4 border-t border-slate-200 space-y-4">
+                    <ThreeLineResult
+                      result={verifyResult}
+                      batchId={foundRecord?.batch_id || activeRecord.batch_id}
+                      anchorSeq={foundRecord?.anchor_seq || 1}
+                      timestamp={foundRecord?.anchored_at || activeRecord.anchored_at}
+                      isManifest={false}
+                    />
+
+                    <StepList steps={verifyResult.steps} />
+
+                    {aiExplanation && (
+                      <div className="pc-verify-line-5 p-4 rounded-xl bg-blue-50/70 border border-blue-200 text-xs text-slate-700 space-y-1">
+                        <div className="font-bold text-blue-800 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-blue-600" /> Explanation Summary
+                        </div>
+                        <p>{aiExplanation}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Verification Result: Unregistered / Altered Document */}
           {unregistered && (

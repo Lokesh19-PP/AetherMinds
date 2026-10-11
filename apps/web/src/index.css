@@ -31,3 +31,24 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* S1: Top status bar green dot pulse */
+@keyframes pc-status-dot-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.53);
+  }
+  100% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+.pc-status-dot-active {
+  animation: pc-status-dot-pulse 1.6s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-status-dot-active {
+    animation: none;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.53);
+  }
+}

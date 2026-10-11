@@ -37,6 +37,7 @@ import { api, RecordItem } from '../../lib/api';
 import { getOrCreateCreatorKey, getKeyFingerprint } from '../../lib/creatorKey';
 import { sha256Hex, signManifest as coreSignManifest } from '@proofchain/core';
 import type { CreatorManifest, ManifestLicense } from '@proofchain/core';
+import '../../styles/pc-creator.css';
 
 interface SocialWorkPost {
   id: string;
@@ -695,6 +696,90 @@ export const CreatorHome: React.FC = () => {
 
           {/* RIGHT COLUMN: Social Media Feed Cards (8 Cols) */}
           <section className="lg:col-span-8 space-y-6">
+            {/* Approved Creation Trail & Certificate Section */}
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
+              <div className="border-b border-slate-100 pb-4">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-cyan-600 font-bold">
+                  CREATOR COPYRIGHT
+                </span>
+                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight mt-0.5">
+                  Creative Work Protection
+                </h2>
+                <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
+                  For authors, researchers, and digital creators. Establish legal timestamp priority on drafts, revisions, and final works using private cryptographic browser keys.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                {/* Creation Trail */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-mono uppercase font-bold text-slate-400 tracking-wider">
+                    CREATION TRAIL
+                  </h3>
+
+                  <div className="relative pl-6 space-y-5">
+                    {/* Step 1: Draft */}
+                    <div className="pc-creator-row-1 relative">
+                      <div className="pc-creator-dot-1 absolute -left-6 top-1.5 w-3 h-3 rounded-full bg-emerald-500 shadow-sm" />
+                      <div className="pc-creator-line-1 absolute -left-[19px] top-4.5 w-0.5 h-8 bg-slate-300" />
+                      <div className="text-sm font-bold text-slate-900">Draft</div>
+                      <div className="text-xs text-slate-500 font-mono mt-0.5">
+                        [FINGERPRINT] · signed with your key
+                      </div>
+                    </div>
+
+                    {/* Step 2: Revision */}
+                    <div className="pc-creator-row-2 relative">
+                      <div className="pc-creator-dot-2 absolute -left-6 top-1.5 w-3 h-3 rounded-full bg-emerald-500 shadow-sm" />
+                      <div className="pc-creator-line-2 absolute -left-[19px] top-4.5 w-0.5 h-8 bg-slate-300" />
+                      <div className="text-sm font-bold text-slate-900">Revision</div>
+                      <div className="text-xs text-slate-500 font-mono mt-0.5">
+                        [FINGERPRINT] · links to Draft
+                      </div>
+                    </div>
+
+                    {/* Step 3: Final */}
+                    <div className="pc-creator-row-3 relative">
+                      <div className="pc-creator-dot-3 absolute -left-6 top-1.5 w-3 h-3 rounded-full bg-emerald-500 shadow-sm" />
+                      <div className="text-sm font-bold text-slate-900">Final</div>
+                      <div className="text-xs text-slate-500 font-mono mt-0.5">
+                        [FINGERPRINT] · links to Revision
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 text-xs text-slate-500 space-y-1 border-t border-slate-100">
+                    <p>• Zero file upload required — your confidential creative files stay on your device</p>
+                    <p>• Chain revisions (Draft → Revision → Final) to prove creative evolution</p>
+                  </div>
+                </div>
+
+                {/* Certificate Card */}
+                <div className="pc-creator-cert-card rounded-2xl border border-cyan-200 bg-cyan-50/40 p-5 space-y-3.5 shadow-xs">
+                  <div className="text-[10px] font-mono uppercase font-bold text-cyan-700 tracking-wider">
+                    CERTIFICATE OF AUTHORSHIP & REGISTRATION
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-slate-500">Registered to</div>
+                    <div className="text-sm font-bold text-slate-900">[AUTHOR NAME]</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-slate-800">[WORK TITLE] · registered [DATE]</div>
+                    <div className="text-[11px] text-slate-500 font-mono mt-0.5">Ledger entry [ENTRY #]</div>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-relaxed border-t border-cyan-100 pt-2">
+                    Proves integrity and priority of registration — not authorship or truth. Competing claims show evidence; they do not decide disputes.
+                  </p>
+                  <button
+                    onClick={() => window.print()}
+                    className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-semibold text-xs transition-all shadow-2xs"
+                  >
+                    Print Certificate
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {loading ? (
               <div className="p-16 text-center space-y-3 bg-white rounded-3xl border border-slate-200">
                 <RefreshCw className="w-8 h-8 text-cyan-600 animate-spin mx-auto" />

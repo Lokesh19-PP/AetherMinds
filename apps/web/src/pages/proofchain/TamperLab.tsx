@@ -26,6 +26,7 @@ import { sha256Hex, leafHash as computeLeafHash } from '@proofchain/core';
 import { verifyBundle, HttpLedgerReader, EthereumReader } from '@proofchain/verifier';
 import { pinnedEthereum } from '../../generated/pinnedEthereum';
 import { anchorPublicKey } from '../../generated/anchorPub';
+import '../../styles/pc-tamper.css';
 
 export const TamperLab: React.FC = () => {
   // Real workspace data
@@ -296,6 +297,83 @@ export const TamperLab: React.FC = () => {
             <RotateCcw className={`w-4 h-4 text-blue-600 ${resetting ? 'animate-spin' : ''}`} />
             Restore Clean State
           </button>
+        </div>
+      </div>
+
+      {/* WHAT THE VERIFIER REPORTS (Approved Design) */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-5 shadow-sm">
+        <div className="border-b border-slate-100 pb-3">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-rose-600 font-bold">
+            Real-Time Diagnostic Outputs
+          </span>
+          <h2 className="text-base font-bold text-slate-900 mt-0.5">
+            WHAT THE VERIFIER REPORTS
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Break things on purpose. The verifier reads the anchor, never the database, so it still tells the truth.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Box 1: DOC_MODIFIED (shaking box + flickering badge) */}
+          <div className="pc-tamper-shake p-4 rounded-xl border border-rose-300 bg-rose-50/50 space-y-2 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="pc-tamper-flicker px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-rose-600 text-white shadow-2xs">
+                DOC_MODIFIED
+              </span>
+            </div>
+            <div className="text-xs font-mono text-slate-800 font-semibold break-all">
+              a3e2de2f6cc967 → 7f90b1c4e2d8ab
+            </div>
+            <p className="text-[11px] text-slate-500 leading-snug">
+              Document bytes altered. Fingerprint mismatch detected.
+            </p>
+          </div>
+
+          {/* Box 2: ROOT_MISMATCH (flickering badge with 0.4s offset, static box) */}
+          <div className="p-4 rounded-xl border border-amber-300 bg-amber-50/50 space-y-2 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="pc-tamper-flicker-offset px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-600 text-white shadow-2xs">
+                ROOT_MISMATCH
+              </span>
+            </div>
+            <div className="text-xs font-semibold text-slate-900">
+              A proof hash was edited.
+            </div>
+            <p className="text-[11px] text-slate-500 leading-snug">
+              Cryptographic Merkle tree branch validation failed.
+            </p>
+          </div>
+
+          {/* Box 3: DB_ROOT_DRIFT (completely static box) */}
+          <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-slate-700 text-white shadow-2xs">
+                DB_ROOT_DRIFT
+              </span>
+            </div>
+            <div className="text-xs font-semibold text-slate-900">
+              Registry audit flags it as REGISTRY_DRIFT.
+            </div>
+            <p className="text-[11px] text-slate-500 leading-snug">
+              Database altered independently of immutable ledger.
+            </p>
+          </div>
+
+          {/* Box 4: STILL VERIFIED (completely static box) */}
+          <div className="p-4 rounded-xl border border-emerald-300 bg-emerald-50/50 space-y-2 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-emerald-600 text-white shadow-2xs">
+                STILL VERIFIED
+              </span>
+            </div>
+            <div className="text-xs font-semibold text-slate-900">
+              Genuine documents still pass.
+            </div>
+            <p className="text-[11px] text-slate-500 leading-snug">
+              Because the verifier reads the decentralized anchor.
+            </p>
+          </div>
         </div>
       </div>
 

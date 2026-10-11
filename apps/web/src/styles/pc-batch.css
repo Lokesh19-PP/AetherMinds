@@ -1,0 +1,26 @@
+/* =====================================================
+   PAGE 4: BATCHES & RECORDS ANIMATIONS
+   ===================================================== */
+
+/* Connector lines: stroke-dasharray 6 6, stroke-dashoffset 0 -> -24, 1s linear infinite (traveling leaf to root) */
+@keyframes pc-batch-flow {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -24;
+  }
+}
+
+.pc-batch-connector-line {
+  stroke-dasharray: 6 6;
+  animation: pc-batch-flow 1s linear infinite;
+}
+
+/* Rule 6: prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .pc-batch-connector-line {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}

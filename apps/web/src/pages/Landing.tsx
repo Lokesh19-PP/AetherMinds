@@ -1,51 +1,99 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, CheckCircle2, Layers, Feather, FlaskConical, ArrowRight, Lock, FileCheck, Search, Sparkles } from 'lucide-react';
+import '../styles/pc-home.css';
 
 export const Landing: React.FC = () => {
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-16 font-sans">
       {/* Hero Section */}
-      <div className="text-center space-y-6 pt-4 max-w-3xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-xs font-semibold shadow-2xs">
-          <Sparkles className="w-4 h-4 text-blue-600" />
-          <span>Next-Gen Document Integrity Platform</span>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center pt-4">
+        {/* Left Column: Text & CTAs */}
+        <div className="lg:col-span-7 space-y-6 text-left">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-xs font-semibold shadow-2xs">
+            <Sparkles className="w-4 h-4 text-blue-600" />
+            <span>Next-Gen Document Integrity Platform</span>
+          </div>
+
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
+            Tamper-Proof Document Security &{' '}
+            <span className="text-blue-600">
+              Instant Verification
+            </span>
+          </h1>
+
+          <p className="text-base sm:text-lg text-slate-600 max-w-xl leading-relaxed">
+            Secure certificates, official records, and creative works with mathematical proof. Verify authenticity anywhere, anytime — zero trust required.
+          </p>
+
+          {/* Quick Launch Action Buttons */}
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <Link
+              to="/proofchain/register"
+              className="px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20"
+            >
+              <FileCheck className="w-5 h-5" />
+              Register a Document
+            </Link>
+            <Link
+              to="/verify"
+              className="px-6 py-3 rounded-xl bg-white text-slate-800 border border-slate-300 hover:border-blue-400 hover:text-blue-600 font-semibold flex items-center gap-2 transition-all shadow-xs"
+            >
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+              Verify Document
+            </Link>
+            <Link
+              to="/proofchain/batches"
+              className="px-5 py-3 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-100 font-semibold flex items-center gap-2 transition-all border border-slate-200"
+            >
+              <Layers className="w-5 h-5 text-slate-500" />
+              View Batches & Records
+            </Link>
+          </div>
         </div>
 
-        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
-          Tamper-Proof Document Security &{' '}
-          <span className="text-blue-600">
-            Instant Verification
-          </span>
-        </h1>
+        {/* Right Column: Hero Document Card (PDF 4 Approved Design) */}
+        <div className="lg:col-span-5 flex justify-center lg:justify-end relative">
+          {/* Pale blue card behind it stays still */}
+          <div className="w-64 sm:w-72 h-80 rounded-3xl bg-blue-50 border border-blue-200/80 absolute top-4 right-4 sm:right-6 -rotate-3 transition-transform" />
 
-        <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-          Secure certificates, official records, and creative works with mathematical proof. Verify authenticity anywhere, anytime — zero trust required.
-        </p>
+          {/* 1. Hero document card: float translateY 0 -> -8px -> 0 */}
+          <div className="pc-home-hero-card relative z-10 w-64 sm:w-72 rounded-3xl bg-white border border-slate-200 p-6 shadow-xl space-y-4 overflow-hidden">
+            {/* 2. Sheen sweeping across */}
+            <div className="pc-home-sheen" />
 
-        {/* Quick Launch Action Buttons */}
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-          <Link
-            to="/proofchain/register"
-            className="px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20"
-          >
-            <FileCheck className="w-5 h-5" />
-            Register a Document
-          </Link>
-          <Link
-            to="/verify"
-            className="px-6 py-3 rounded-xl bg-white text-slate-800 border border-slate-300 hover:border-blue-400 hover:text-blue-600 font-semibold flex items-center gap-2 transition-all shadow-xs"
-          >
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            Verify Document
-          </Link>
-          <Link
-            to="/proofchain/batches"
-            className="px-5 py-3 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-100 font-semibold flex items-center gap-2 transition-all border border-slate-200"
-          >
-            <Layers className="w-5 h-5 text-slate-500" />
-            View Batches & Records
-          </Link>
+            {/* Document simulated content lines */}
+            <div className="space-y-2 pt-1">
+              <div className="h-2.5 bg-slate-200 rounded-full w-3/4" />
+              <div className="h-2 bg-slate-100 rounded-full w-full" />
+              <div className="h-2 bg-slate-100 rounded-full w-5/6" />
+              <div className="h-2 bg-slate-100 rounded-full w-2/3" />
+            </div>
+
+            {/* Stamp & Ripple Area */}
+            <div className="py-6 flex items-center justify-center relative min-h-[90px]">
+              {/* 4. Ripple ring behind the stamp */}
+              <div className="pc-home-stamp-ripple w-20 h-20" />
+
+              {/* 3. VERIFIED stamp */}
+              <div className="pc-home-stamp relative z-10 px-4 py-1.5 rounded-lg border-2 border-emerald-500 bg-emerald-50/90 text-emerald-600 font-extrabold text-sm uppercase tracking-wider shadow-xs">
+                VERIFIED
+              </div>
+            </div>
+
+            {/* Footer Metadata */}
+            <div className="pt-2 border-t border-slate-100 space-y-0.5">
+              <div className="text-[10px] font-mono uppercase font-bold text-slate-400">
+                SHA-256
+              </div>
+              <div className="text-xs font-mono font-bold text-slate-800">
+                a3e2de2f…6cc967
+              </div>
+              <div className="text-[11px] font-semibold text-blue-600 pt-0.5">
+                Anchored · Ledger #6
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

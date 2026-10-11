@@ -1,0 +1,112 @@
+/* =====================================================
+   PAGE 5: CREATOR PROTECTION ANIMATIONS
+   ===================================================== */
+
+/* 1. Creation trail dots pop sequence:
+   scale 0 -> 1.25 -> 1 at delays 0s, 0.7s, 1.4s */
+@keyframes pc-creator-dot-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.pc-creator-dot-1 {
+  animation: pc-creator-dot-pop 0.5s 0s both cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pc-creator-dot-2 {
+  animation: pc-creator-dot-pop 0.5s 0.7s both cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pc-creator-dot-3 {
+  animation: pc-creator-dot-pop 0.5s 1.4s both cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 2. Trail rows slide in:
+   translateX(60px) + opacity 0 -> 1, 0.6s */
+@keyframes pc-creator-row-slide {
+  0% {
+    transform: translateX(60px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.pc-creator-row-1 {
+  animation: pc-creator-row-slide 0.6s 0s both ease-out;
+}
+
+.pc-creator-row-2 {
+  animation: pc-creator-row-slide 0.6s 0.7s both ease-out;
+}
+
+.pc-creator-row-3 {
+  animation: pc-creator-row-slide 0.6s 1.4s both ease-out;
+}
+
+/* 3. Vertical connector lines grow:
+   scaleY 0 -> 1 from top (delays 0.2s, 0.9s) */
+@keyframes pc-creator-line-grow {
+  0% {
+    transform: scaleY(0);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+.pc-creator-line-1 {
+  transform-origin: top;
+  animation: pc-creator-line-grow 0.5s 0.2s both ease-out;
+}
+
+.pc-creator-line-2 {
+  transform-origin: top;
+  animation: pc-creator-line-grow 0.5s 0.9s both ease-out;
+}
+
+/* 4. Certificate card slides in:
+   translateX(60px) + opacity 0 -> 1, 0.8s, delay 1.8s */
+@keyframes pc-creator-cert-slide {
+  0% {
+    transform: translateX(60px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.pc-creator-cert-card {
+  animation: pc-creator-cert-slide 0.8s 1.8s both ease-out;
+}
+
+/* Rule 6: prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .pc-creator-dot-1,
+  .pc-creator-dot-2,
+  .pc-creator-dot-3,
+  .pc-creator-row-1,
+  .pc-creator-row-2,
+  .pc-creator-row-3,
+  .pc-creator-line-1,
+  .pc-creator-line-2,
+  .pc-creator-cert-card {
+    animation: none;
+    transform: none;
+    opacity: 1;
+  }
+}

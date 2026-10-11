@@ -1,0 +1,118 @@
+/* =====================================================
+   PAGE 1: HOME ANIMATIONS
+   ===================================================== */
+
+/* 1. Hero document card float */
+@keyframes pc-home-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.pc-home-hero-card {
+  animation: pc-home-float 5s ease-in-out infinite;
+}
+
+/* 2. Sheen sweep */
+@keyframes pc-home-sheen {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+.pc-home-sheen {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 90px;
+  background: linear-gradient(90deg, transparent, rgba(47, 91, 255, 0.13), transparent);
+  pointer-events: none;
+  animation: pc-home-sheen 3.5s ease-in-out infinite;
+}
+
+/* 3. "VERIFIED" stamp, one 4s loop:
+   0-12% opacity 0, scale 2.4, rotate -7deg
+   24% scale 1, opacity 1
+   28% scale 1.06
+   34-86% hold at scale 1, opacity 1
+   100% opacity 0
+   Keep the -7deg tilt fixed. */
+@keyframes pc-home-stamp {
+  0%, 12% {
+    opacity: 0;
+    transform: rotate(-7deg) scale(2.4);
+  }
+  24% {
+    opacity: 1;
+    transform: rotate(-7deg) scale(1);
+  }
+  28% {
+    opacity: 1;
+    transform: rotate(-7deg) scale(1.06);
+  }
+  34%, 86% {
+    opacity: 1;
+    transform: rotate(-7deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(-7deg) scale(1);
+  }
+}
+
+.pc-home-stamp {
+  transform: rotate(-7deg);
+  transform-origin: center;
+  animation: pc-home-stamp 4s ease-out infinite;
+}
+
+/* 4. Ripple ring behind the stamp:
+   circle with a 3px emerald border, scale .4 -> 1.5 and opacity .8 -> 0, 4s ease-out infinite, in sync with the stamp */
+@keyframes pc-home-ripple {
+  0%, 20% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  24% {
+    transform: scale(0.4);
+    opacity: 0.8;
+  }
+  60%, 100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.pc-home-stamp-ripple {
+  position: absolute;
+  border: 3px solid #10b981;
+  border-radius: 9999px;
+  pointer-events: none;
+  animation: pc-home-ripple 4s ease-out infinite;
+}
+
+/* Rule 6: prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .pc-home-hero-card,
+  .pc-home-sheen,
+  .pc-home-stamp,
+  .pc-home-stamp-ripple {
+    animation: none;
+  }
+  .pc-home-stamp {
+    opacity: 1;
+    transform: rotate(-7deg) scale(1);
+  }
+  .pc-home-sheen {
+    display: none;
+  }
+  .pc-home-stamp-ripple {
+    opacity: 0;
+  }
+}

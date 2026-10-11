@@ -1,0 +1,63 @@
+/* =====================================================
+   PAGE 6: TAMPER LAB ANIMATIONS
+   ===================================================== */
+
+/* 1. DOC_MODIFIED box shake:
+   translateX 0 -> -7px -> 7px -> -4px -> 4px -> 0, 0.6s infinite alternate, delay 1s */
+@keyframes pc-tamper-box-shake {
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-7px);
+  }
+  40% {
+    transform: translateX(7px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.pc-tamper-shake {
+  animation: pc-tamper-box-shake 0.6s 1s infinite alternate ease-in-out;
+}
+
+/* 2. DOC_MODIFIED badge flicker:
+   opacity 1 -> 0.3 -> 1, 1.2s infinite */
+@keyframes pc-tamper-badge-flicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.pc-tamper-flicker {
+  animation: pc-tamper-badge-flicker 1.2s infinite ease-in-out;
+}
+
+/* 3. ROOT_MISMATCH badge flicker with 0.4s offset delay */
+.pc-tamper-flicker-offset {
+  animation: pc-tamper-badge-flicker 1.2s 0.4s infinite ease-in-out;
+}
+
+/* 4. DB_ROOT_DRIFT and STILL VERIFIED boxes stay completely static */
+
+/* Rule 6: prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .pc-tamper-shake,
+  .pc-tamper-flicker,
+  .pc-tamper-flicker-offset {
+    animation: none;
+    transform: none;
+    opacity: 1;
+  }
+}

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Upload, CheckCircle2, ArrowRight, Layers, AlertCircle, FileText, Eye, Download, ShieldCheck, Sparkles, RefreshCw } from 'lucide-react';
 import { api, RecordResponse } from '../../lib/api';
 import { hashFile } from '../../lib/fileHash';
+import '../../styles/pc-reg.css';
 
 interface QueuedFile {
   file: File;
@@ -175,6 +176,77 @@ export const Register: React.FC = () => {
             Analyzing file and calculating cryptographic fingerprint...
           </div>
         )}
+      </div>
+
+      {/* Registration Pipeline Status Card (Approved Design) */}
+      <div className="pc-reg-card-entrance rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-slate-900">
+                {queuedFiles.length > 0 ? queuedFiles[0].file.name : '[FILE NAME].pdf'}
+              </div>
+              <div className="text-xs text-slate-500">Hashed in your browser</div>
+            </div>
+          </div>
+          <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 font-mono flex items-center gap-2 max-w-full overflow-hidden">
+            <span className="text-[10px] uppercase font-bold text-slate-400">SHA-256</span>
+            <span className="pc-reg-typewriter font-mono text-blue-600 truncate">
+              {queuedFiles.length > 0 ? queuedFiles[0].contentHash : 'e3b0c44298fc1c149afbf4c8996fb924'}
+            </span>
+          </div>
+        </div>
+
+        {/* 4 Pipeline Steps */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50/60 border border-slate-100">
+            <div className="pc-reg-badge-1 w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
+              1
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900">Fingerprint</div>
+              <div className="text-[11px] text-slate-500">SHA-256 computed locally</div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50/60 border border-slate-100">
+            <div className="pc-reg-badge-2 w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
+              2
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900">Queue in open batch</div>
+              <div className="text-[11px] text-slate-500">b-0012 accepting records</div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50/60 border border-slate-100">
+            <div className="pc-reg-badge-3 w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
+              3
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900">Seal batch</div>
+              <div className="text-[11px] text-slate-500">Merkle root generated</div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50/60 border border-slate-100">
+            <div className="pc-reg-badge-4 w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
+              4
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900">Anchor to ledger</div>
+              <div className="text-[11px] text-slate-500">Timestamp is permanent</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress bar under steps */}
+        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+          <div className="pc-reg-progress-bar h-full bg-blue-600 rounded-full" />
+        </div>
       </div>
 
       {/* Queued Documents Ready to Register */}

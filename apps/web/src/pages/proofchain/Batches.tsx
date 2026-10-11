@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Layers, ArrowRight, Lock, RefreshCw, AlertCircle } from 'lucide-react';
 import { api, BatchItem, getIssuerToken, setIssuerToken, DEFAULT_DEV_ISSUER_TOKEN } from '../../lib/api';
+import '../../styles/pc-batch.css';
 
 export const Batches: React.FC = () => {
   const [batches, setBatches] = useState<BatchItem[]>([]);
@@ -201,6 +202,90 @@ export const Batches: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Dark Merkle Tree Card · Batch B-0007 (Approved Design) */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6 text-white shadow-xl space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div>
+            <div className="text-[11px] font-mono uppercase tracking-wider text-blue-400 font-bold">
+              Cryptographic Proof Architecture
+            </div>
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2 mt-0.5">
+              <Layers className="w-4 h-4 text-blue-400" />
+              MERKLE TREE · BATCH B-0007
+            </h3>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-mono">
+            <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase">
+              Anchored · 3 Documents
+            </span>
+          </div>
+        </div>
+
+        {/* Tree Container */}
+        <div className="relative py-2 max-w-2xl mx-auto flex flex-col items-center">
+          {/* Top: Root Box */}
+          <div className="z-10 px-6 py-3 rounded-xl bg-slate-900 border border-blue-500/40 shadow-lg text-center min-w-[220px]">
+            <div className="text-[11px] font-mono uppercase font-bold text-blue-400 tracking-wider">
+              ROOT
+            </div>
+            <div className="text-xs font-mono text-slate-200 font-semibold mt-0.5 truncate">
+              a3e2de2f…6cc967
+            </div>
+          </div>
+
+          {/* SVG Connector Lines from leaves to root */}
+          <div className="w-full h-24 relative my-[-2px]">
+            <svg
+              className="w-full h-full overflow-visible"
+              viewBox="0 0 600 96"
+              fill="none"
+              preserveAspectRatio="none"
+            >
+              {/* doc 1 to ROOT */}
+              <path
+                d="M 100 96 C 100 48, 300 60, 300 0"
+                stroke="#3b82f6"
+                strokeWidth="2"
+                fill="none"
+                className="pc-batch-connector-line"
+              />
+              {/* doc 2 to ROOT */}
+              <path
+                d="M 300 96 L 300 0"
+                stroke="#3b82f6"
+                strokeWidth="2"
+                fill="none"
+                className="pc-batch-connector-line"
+              />
+              {/* doc 3 to ROOT */}
+              <path
+                d="M 500 96 C 500 48, 300 60, 300 0"
+                stroke="#3b82f6"
+                strokeWidth="2"
+                fill="none"
+                className="pc-batch-connector-line"
+              />
+            </svg>
+          </div>
+
+          {/* Bottom: 3 Leaf Boxes */}
+          <div className="z-10 w-full grid grid-cols-3 gap-4">
+            <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-center shadow-md">
+              <div className="text-[12px] font-mono font-bold text-slate-200">doc 1</div>
+              <div className="text-[10px] font-mono text-slate-500 mt-0.5 truncate">Leaf #0</div>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-center shadow-md">
+              <div className="text-[12px] font-mono font-bold text-slate-200">doc 2</div>
+              <div className="text-[10px] font-mono text-slate-500 mt-0.5 truncate">Leaf #1</div>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-center shadow-md">
+              <div className="text-[12px] font-mono font-bold text-slate-200">doc 3</div>
+              <div className="text-[10px] font-mono text-slate-500 mt-0.5 truncate">Leaf #2</div>
+            </div>
+          </div>
         </div>
       </div>
 

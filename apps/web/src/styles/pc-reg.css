@@ -1,0 +1,118 @@
+/* =====================================================
+   PAGE 2: REGISTER DOCUMENT ANIMATIONS
+   ===================================================== */
+
+/* 1. File card entrance: translateX(60px) + opacity 0 -> none + opacity 1, 0.8s ease, once on load */
+@keyframes pc-reg-entrance {
+  0% {
+    transform: translateX(60px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.pc-reg-card-entrance {
+  animation: pc-reg-entrance 0.8s ease forwards;
+}
+
+/* 2. Typewriter hash line:
+   overflow:hidden, white-space:nowrap, 2px blue right border as caret.
+   width 0 -> 100% with steps(40), 3s, infinite, alternate */
+@keyframes pc-reg-typewriter {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes pc-reg-caret {
+  0%, 100% {
+    border-color: #2563eb;
+  }
+  50% {
+    border-color: transparent;
+  }
+}
+
+.pc-reg-typewriter {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+  border-right: 2px solid #2563eb;
+  animation: pc-reg-typewriter 3s steps(40) infinite alternate, pc-reg-caret 0.75s step-end infinite;
+}
+
+/* 3. Step badges 1, 2, 3, 4 pop in sequence:
+   scale 0 -> 1.25 (at 70%) -> 1, 0.5s, delays 0.3s, 1s, 1.7s, 2.4s, fill-mode both */
+@keyframes pc-reg-badge-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.pc-reg-badge-1 {
+  animation: pc-reg-badge-pop 0.5s 0.3s both cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pc-reg-badge-2 {
+  animation: pc-reg-badge-pop 0.5s 1.0s both cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pc-reg-badge-3 {
+  animation: pc-reg-badge-pop 0.5s 1.7s both cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pc-reg-badge-4 {
+  animation: pc-reg-badge-pop 0.5s 2.4s both cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 4. Progress bar under the steps: width 0 -> 100%, 3s ease-out, infinite */
+@keyframes pc-reg-progress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.pc-reg-progress-bar {
+  animation: pc-reg-progress 3s ease-out infinite;
+}
+
+/* Rule 6: prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .pc-reg-card-entrance,
+  .pc-reg-typewriter,
+  .pc-reg-badge-1,
+  .pc-reg-badge-2,
+  .pc-reg-badge-3,
+  .pc-reg-badge-4,
+  .pc-reg-progress-bar {
+    animation: none;
+    transform: none;
+    opacity: 1;
+  }
+  .pc-reg-typewriter {
+    width: 100%;
+    border-right: none;
+  }
+  .pc-reg-progress-bar {
+    width: 100%;
+  }
+}

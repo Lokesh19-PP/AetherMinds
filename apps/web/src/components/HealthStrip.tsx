@@ -94,7 +94,7 @@ export const HealthStrip: React.FC = () => {
     <div className="w-full bg-slate-50 border-b border-slate-200 px-4 py-1.5 text-xs text-slate-600">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-rose-500' : 'bg-emerald-500 animate-pulse'}`} />
+          <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-rose-500' : 'bg-emerald-500 pc-status-dot-active'}`} />
           <span className="font-semibold text-slate-700 text-xs">
             {isOffline ? 'Services Offline' : 'ProofChain Network Active'}
           </span>
