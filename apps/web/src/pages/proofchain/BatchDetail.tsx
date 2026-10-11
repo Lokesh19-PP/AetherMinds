@@ -356,16 +356,25 @@ export const BatchDetail: React.FC = () => {
                   </td>
                   <td className="py-3.5 px-3 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <a
-                        href={`/api/records/${rec.id}/file`}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 transition-all font-semibold text-[11px] border border-slate-200"
-                        title="View or download original uploaded document"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-blue-600" /> View Document
-                      </a>
+                      {rec.storageMode === 'copy' || rec.fileRef ? (
+                        <a
+                          href={`/api/records/${rec.id}/file`}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 transition-all font-semibold text-[11px] border border-slate-200"
+                          title="View or download original uploaded document"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-blue-600" /> View Document
+                        </a>
+                      ) : (
+                        <span
+                          className="text-[10px] text-slate-400 font-mono px-2 py-1 rounded bg-slate-50 border border-slate-200"
+                          title="This record was registered in Zero-Knowledge mode (hash-only). No file was stored on the server."
+                        >
+                          Hash Only
+                        </span>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

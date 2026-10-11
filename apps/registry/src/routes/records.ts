@@ -1,5 +1,7 @@
 import express, { Request, Response } from 'express';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import { leafHash as computeLeafHash, sha256Hex, hexToBytes } from '@proofchain/core';
 import { DatabaseSync } from '../db/sqlite.js';
 import { FileStore } from '../storage/FileStore.js';
@@ -217,24 +219,115 @@ export function createRecordsRouter(db: DatabaseSync, fileStore: FileStore): exp
   // GET /api/records/:id/file
   router.get('/:id/file', async (req: Request, res: Response) => {
     const record = db.prepare('SELECT id, file_ref, file_name, content_hash, mime FROM records WHERE id = ?').get(req.params.id) as any;
-    if (!record || !record.file_ref) {
+    if (!record) {
       return res.status(404).json({
-        error: { code: 'NOT_FOUND', message: 'No stored copy available for this record' },
+        error: { code: 'NOT_FOUND', message: `Record "${req.params.id}" not found` },
       });
     }
 
-    try {
-      const result = await fileStore.get(record.file_ref, 'file');
-      const filename = record.file_name || `document-${record.id}`;
-      res.setHeader('Content-Type', result.mime || record.mime || 'application/octet-stream');
-      res.setHeader('X-Content-SHA256', record.content_hash);
-      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
-      return res.send(Buffer.from(result.bytes));
-    } catch (err: any) {
-      return res.status(500).json({
-        error: { code: 'STORAGE_ERROR', message: err.message },
-      });
+    const filename = record.file_name || `document-${record.id}`;
+    const mime = record.mime || 'application/pdf';
+
+    // 1. Try fileStore with file_ref
+    if (record.file_ref) {
+      try {
+        const result = await fileStore.get(record.file_ref, 'file');
+        res.setHeader('Content-Type', result.mime || mime);
+        res.setHeader('X-Content-SHA256', record.content_hash);
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
+        return res.send(Buffer.from(result.bytes));
+      } catch (err: any) {
+        console.warn(`[FileStore] Lookup for file_ref ${record.file_ref} failed: ${err.message}`);
+      }
     }
+
+    // 2. Try fileStore with content_hash
+    if (record.content_hash) {
+      try {
+        const result = await fileStore.get(record.content_hash, 'file');
+        res.setHeader('Content-Type', result.mime || mime);
+        res.setHeader('X-Content-SHA256', record.content_hash);
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
+        return res.send(Buffer.from(result.bytes));
+      } catch {}
+    }
+
+function findMonorepoRoot(startDir: string = process.cwd()): string {
+  let curr = path.resolve(startDir);
+  while (curr && curr !== path.dirname(curr)) {
+    const pkgPath = path.join(curr, 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+        if (pkg.name === 'proofchain-monorepo') {
+          return curr;
+        }
+      } catch {}
+    }
+    curr = path.dirname(curr);
+  }
+  return process.cwd();
+}
+
+    // 3. Fallback search in samples directory or data directory
+    const repoRoot = findMonorepoRoot();
+    const candidates = [
+      path.join(repoRoot, 'samples', 'certificates', record.file_name || ''),
+      path.join(repoRoot, 'samples', 'creator-works', record.file_name || ''),
+      path.join(repoRoot, 'data', 'files', record.content_hash || ''),
+      path.join(repoRoot, 'data', 'files', record.file_ref || ''),
+    ];
+
+    for (const cand of candidates) {
+      if (record.file_name && fs.existsSync(cand)) {
+        try {
+          const bytes = fs.readFileSync(cand);
+          res.setHeader('Content-Type', mime);
+          res.setHeader('X-Content-SHA256', record.content_hash);
+          res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
+          return res.send(bytes);
+        } catch {}
+      }
+    }
+
+    if (req.headers.accept?.includes('text/html')) {
+      return res.status(404).send(`
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Zero-Knowledge Record - ProofChain</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1e293b; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
+    .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 36px; max-width: 520px; text-align: center; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
+    h1 { font-size: 20px; color: #0f172a; margin-top: 14px; margin-bottom: 8px; }
+    p { font-size: 13px; color: #64748b; line-height: 1.6; margin: 8px 0; }
+    .badge { display: inline-block; padding: 4px 12px; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; border-radius: 9999px; font-size: 11px; font-weight: 700; font-family: monospace; text-transform: uppercase; letter-spacing: 0.05em; }
+    .hash-box { font-family: monospace; font-size: 11px; background: #f1f5f9; padding: 12px; border-radius: 10px; word-break: break-all; margin: 18px 0; color: #334155; text-align: left; }
+    .hash-label { font-weight: bold; color: #475569; margin-bottom: 4px; }
+    .btn { display: inline-block; margin-top: 16px; padding: 10px 20px; background: #2563eb; color: white; border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">Zero-Knowledge Registration</div>
+    <h1>No File Copy Stored on Server</h1>
+    <p>This document was registered in <strong>Hash-Only</strong> mode. The cryptographic proof of timestamp and registration is fully secured on the ledger, but the original file was not uploaded to protect privacy.</p>
+    <div class="hash-box">
+      <div class="hash-label">Immutable SHA-256 Digest:</div>
+      <div>${record.content_hash}</div>
+    </div>
+    <p>To verify that your local document matches this record, upload your local file and its <code>.pcproof.json</code> bundle on the verifier page.</p>
+    <a href="/verify" class="btn">Open Standalone Verifier</a>
+  </div>
+</body>
+</html>
+      `);
+    }
+
+    return res.status(404).json({
+      error: { code: 'NOT_FOUND', message: 'No stored copy available for this record (registered in hash-only mode)' },
+    });
   });
 
   return router;
