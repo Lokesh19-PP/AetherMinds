@@ -1,16 +1,17 @@
 /**
  * @proofchain/ai — Public API
  *
- * Tier 1 deterministic AI module.
- * Fully offline, no external AI services required (AI_MODE=rules).
+ * Tier 1 deterministic AI module with optional Tier 2 local Ollama explainer.
+ * Fully offline capable, no external AI services required (AI_MODE=rules).
  * Never imported by @proofchain/core or @proofchain/verifier.
  *
  * Exports:
- *  - textFromFile    : Extract plain text from PDF or UTF-8 file bytes
- *  - extractWithRules: Regex/keyword metadata extraction with confidence + source
- *  - classify        : Multinomial Naive Bayes document categorization
- *  - simhash/hammingDistance: 64-bit SimHash for text near-duplicate detection
- *  - compareDHashes  : Image dHash distance comparison
+ *  - textFromFile        : Extract plain text from PDF or UTF-8 file bytes
+ *  - extractWithRules    : Regex/keyword metadata extraction with confidence + source
+ *  - classify            : Multinomial Naive Bayes document categorization
+ *  - simhash/hamming     : 64-bit SimHash for text near-duplicate detection
+ *  - compareDHashes      : Image dHash distance comparison
+ *  - guard / explainer   : Strict Anti-Hallucination Guard and Ollama explainer
  */
 
 // ── Text extraction ───────────────────────────────────────────────────────────
@@ -46,6 +47,26 @@ export {
   findSimilarImages,
 } from './similarity/dhash';
 export type { DHashComparison, DHashSimilarityLabel } from './similarity/dhash';
+
+// ── Failure explainer & Anti-Hallucination Guard ──────────────────────────────
+export {
+  validateExplanation,
+  guardExplanation,
+  FORBIDDEN_WORDS,
+} from './explain/guard';
+export type { GuardResult, VerifyResultLike } from './explain/guard';
+
+export { VERIFY_MESSAGES, getTemplateMessage } from './explain/messages';
+
+export {
+  generateWithOllama,
+  isOllamaAvailable,
+  OLLAMA_TIMEOUT_MS,
+} from './ollama';
+export type { OllamaGenerateOptions } from './ollama';
+
+export { explainResult } from './explain/explain';
+export type { ExplainOutput } from './explain/explain';
 
 // ─── Convenience: run full Tier-1 AI pipeline on raw file bytes ───────────────
 
