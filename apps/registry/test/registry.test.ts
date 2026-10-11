@@ -219,9 +219,11 @@ describe('Registry Backend, Batch Sealing & Proof Service (apps/registry)', () =
     });
 
     it('seals batch, computes Merkle tree root, publishes to Anchor, and returns valid ProofBundle', async () => {
-      // 1. Boot local in-process Anchor server
+      // 1. Boot local in-process Anchor server on dynamic free port
       const { app: anchorApp } = createAnchorApp(anchorDir);
-      const anchorServer = anchorApp.listen(4100);
+      const anchorServer = anchorApp.listen(0);
+      const dynamicPort = (anchorServer.address() as any).port;
+      process.env.ANCHOR_URL = `http://127.0.0.1:${dynamicPort}`;
 
       try {
         const { app: registryApp, db } = createRegistryApp({ dbPath, dataDir: testDir, fileStoreType: 'local' });

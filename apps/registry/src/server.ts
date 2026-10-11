@@ -8,6 +8,9 @@ import { createFileStore, FileStore } from './storage/localDisk.js';
 import { requireIssuerAuth } from './middleware/auth.js';
 import { createRecordsRouter } from './routes/records.js';
 import { createBatchesRouter } from './routes/batches.js';
+import { createHealthRouter } from './routes/health.js';
+import { createAuditRouter } from './routes/audit.js';
+import { createDemoRouter } from './routes/demo.js';
 
 dotenv.config();
 
@@ -31,38 +34,21 @@ export function createRegistryApp(options?: {
 
   app.use(express.json({ limit: '10mb' }));
 
-  // Health endpoint
-  app.get('/api/health', async (_req, res) => {
-    let dbOk = false;
-    try {
-      db.prepare('SELECT 1').get();
-      dbOk = true;
-    } catch {
-      dbOk = false;
-    }
-
-    const storeHealth = await fileStore.health();
-
-    res.json({
-      status: dbOk ? 'ok' : 'degraded',
-      service: 'registry',
-      port: process.env.REGISTRY_PORT || 4000,
-      database: dbOk ? 'connected' : 'error',
-      fileStore: {
-        name: fileStore.name,
-        ok: storeHealth.ok,
-      },
-    });
-  });
-
   // Protected test route for verifying auth middleware
   app.get('/api/protected-check', requireIssuerAuth, (_req, res) => {
     res.json({ ok: true, message: 'Authorized issuer' });
   });
 
   // Mount API routers
+  app.use('/api/health', createHealthRouter(db, fileStore));
   app.use('/api/records', createRecordsRouter(db, fileStore));
   app.use('/api/batches', createBatchesRouter(db));
+  app.use('/api/audit', createAuditRouter(db, fileStore));
+
+  // Mount Tamper Lab demo endpoints
+  if (process.env.DEMO_MODE === 'true' || process.env.NODE_ENV === 'test') {
+    app.use('/api/demo', createDemoRouter(db, fileStore));
+  }
 
   return { app, fileStore, db };
 }
@@ -75,6 +61,7 @@ export function startServer(): void {
       console.log(`🏛️ ProofChain Registry API listening on port ${port}`);
       console.log(`   File storage mode: ${fileStore.name}`);
       console.log(`   Web origin CORS:   ${process.env.WEB_ORIGIN || 'http://localhost:5173'}`);
+      console.log(`   Demo mode:         ${process.env.DEMO_MODE === 'true' ? 'ENABLED' : 'DISABLED'}`);
     });
   } catch (err: any) {
     console.error(`❌ Registry startup failed: ${err.message}`);
