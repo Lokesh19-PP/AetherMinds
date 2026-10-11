@@ -6,6 +6,12 @@ cache/
 typechain-types/
 coverage/
 .vite/
+data/
+anchor-data/
+witness-data/
+*.db
+*.db-wal
+*.db-shm
 .env
 .env.local
 *.tsbuildinfo

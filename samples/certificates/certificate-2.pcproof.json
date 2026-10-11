@@ -1,0 +1,37 @@
+{
+  "format": "proofchain/proof/1",
+  "recordKind": "file",
+  "batchId": "b-0001",
+  "leafIndex": 1,
+  "leafCount": 5,
+  "leafHash": "f4c03a8f57e697e0ee0d5419c6d42ce69b0f610fe890a2f42b2aef9aad37f9ee",
+  "path": [
+    {
+      "hash": "82a89c4e5d12655c8ef5f702d00a848b1ee9bf5352e047bb606f3b37c1e38e24",
+      "side": "L"
+    },
+    {
+      "hash": "2e9b6b3cc72a87f1c360b00dbac52241633727930a9623e176f3729e1095741e",
+      "side": "R"
+    },
+    {
+      "hash": "1b6d61c4ac06a9809ee10dd129da6dd7cfe37c54a0a391a808afc3476b0d480d",
+      "side": "R"
+    }
+  ],
+  "anchors": [
+    {
+      "kind": "ledger",
+      "seq": 0,
+      "url": "http://localhost:4100",
+      "entryHash": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "ethereum",
+      "chainId": 31337,
+      "contract": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "id": 0,
+      "txHash": "0x1111111111111111111111111111111111111111111111111111111111111111"
+    }
+  ]
+}

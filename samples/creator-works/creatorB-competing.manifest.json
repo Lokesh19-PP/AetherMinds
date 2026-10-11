@@ -1,0 +1,19 @@
+{
+  "schema": "creatorproof/manifest/1",
+  "workId": "work-bob-infringing",
+  "version": 1,
+  "parentLeaf": null,
+  "fileHash": "b222380a9277165ba224c6d294f73a24d276c26c818ccddc13e7a6a95d0a3d36",
+  "fileName": "copied-sunrise.txt",
+  "mime": "text/plain",
+  "size": 150,
+  "title": "Sunrise Painting by Bob",
+  "category": "Creative",
+  "license": "ALL_RIGHTS_RESERVED",
+  "creator": {
+    "publicKey": "20828bf5c5bdcacb684863336c202fb5599da48be5596615742170705beca9f7",
+    "displayName": "Bob T. (Later Claimant)"
+  },
+  "createdAtClaimed": "2026-01-01T15:00:00Z",
+  "signature": "21b68edd237badbc186851728bc270ae6691e981e37a281b8b268ba2ccc9cbbacf1618a4bbdf893ad18ac05c059414953193d03c966a95f89d3b45b90d89fd07"
+}

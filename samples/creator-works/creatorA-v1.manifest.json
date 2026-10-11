@@ -1,0 +1,19 @@
+{
+  "schema": "creatorproof/manifest/1",
+  "workId": "work-sunrise-2026",
+  "version": 1,
+  "parentLeaf": null,
+  "fileHash": "408e6ec7b905cba4628a9c2eeb56d7a8b17b75141dcc1cb8467dc055326ca0a0",
+  "fileName": "creatorA-draft.txt",
+  "mime": "text/plain",
+  "size": 135,
+  "title": "Sunrise Over Fictional Bay (Draft)",
+  "category": "Creative",
+  "license": "CC_BY_NC",
+  "creator": {
+    "publicKey": "43a72e714401762df66b68c26dfbdf2682aaec9f2474eca4613e424a0fbafd3c",
+    "displayName": "Asha K."
+  },
+  "createdAtClaimed": "2026-01-01T08:00:00Z",
+  "signature": "8522118d1f4663d6c9635125e730404b1001c4ba39d7a2235e2d72aadc387cac03559f085f4b905e820d684ef2365e5fa5e6ebd58410cc0a87b0731c2f1e1f08"
+}
