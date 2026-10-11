@@ -3,6 +3,7 @@ import cors from 'cors';
 import { createManifestsRouter } from './routes/manifests';
 import { createWorksRouter } from './routes/works';
 import { createClaimsRouter } from './routes/claims';
+import { createAiRouter } from './routes/ai';
 import { RegistryDB, getDatabase } from './db';
 
 export interface CreateAppOptions {
@@ -20,6 +21,11 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use('/api/manifests', createManifestsRouter(dbGetter));
   app.use('/api/works', createWorksRouter(dbGetter));
   app.use('/api/claims', createClaimsRouter(dbGetter));
+
+  // AI routes: /api/extract, /api/explain and /api/ai/extract, /api/ai/explain
+  const aiRouter = createAiRouter();
+  app.use('/api', aiRouter);
+  app.use('/api/ai', aiRouter);
 
   // Health check
   app.get('/api/health', (req, res) => {

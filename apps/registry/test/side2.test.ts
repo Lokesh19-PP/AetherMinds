@@ -368,4 +368,38 @@ describe('CreatorProof Side 2 Backend Routes', () => {
       expect(res.body.error.code).toBe('VALIDATION_ERROR');
     });
   });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 4. POST /api/extract & POST /api/explain
+  // ═══════════════════════════════════════════════════════════════════════════
+  describe('AI Endpoints: /api/extract & /api/explain', () => {
+    it('POST /api/extract extracts metadata and predicts category using rules and Naive Bayes', async () => {
+      const sampleText =
+        'INVOICE\\nIssuer: Acme Corp Ltd\\nInvoice Number: INV-9901\\nDate: 2026-03-15\\nTotal: $1,250.00\\nPayment terms: Net 30';
+
+      const res = await request(app).post('/api/extract').send({ text: sampleText });
+      expect(res.status).toBe(200);
+      expect(res.body.fields).toBeDefined();
+      expect(res.body.category).toBeDefined();
+      expect(res.body.category.label).toBeDefined();
+      expect(res.body.aiPath).toBe('rules');
+      expect(res.body.simhash).toBeDefined();
+    });
+
+    it('POST /api/explain receives VerifyResult and returns guarded plain-language explanation', async () => {
+      const verifyResult = {
+        verdict: 'INVALID',
+        code: 'DOC_MODIFIED',
+        message: 'Byte mismatch',
+        warnings: [],
+      };
+
+      const res = await request(app).post('/api/explain').send({ verifyResult });
+      expect(res.status).toBe(200);
+      expect(res.body.explanation).toBeDefined();
+      expect(res.body.explanation).toContain('does not match the leaf');
+      expect(res.body.aiPath).toBeDefined();
+    });
+  });
 });
+
