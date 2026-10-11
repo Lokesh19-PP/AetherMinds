@@ -1,0 +1,23 @@
+{
+  "name": "@proofchain/verifier",
+  "version": "1.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.4.0",
+    "@noble/hashes": "^1.4.0",
+    "@proofchain/core": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  }
+}
