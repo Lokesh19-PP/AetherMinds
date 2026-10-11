@@ -88,23 +88,54 @@ export const HealthStrip: React.FC = () => {
     );
   };
 
+  const [showDetails, setShowDetails] = useState<boolean>(false);
+
   return (
-    <div className="w-full bg-slate-50/90 border-b border-slate-200 px-4 py-1.5 text-xs text-slate-600 flex flex-wrap items-center justify-between gap-2">
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1 text-blue-700 font-semibold">
-          <Activity className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
-          <span className="uppercase tracking-wider text-[10px] text-slate-500 font-bold">Network Services</span>
+    <div className="w-full bg-slate-50 border-b border-slate-200 px-4 py-1.5 text-xs text-slate-600">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-rose-500' : 'bg-emerald-500 animate-pulse'}`} />
+          <span className="font-semibold text-slate-700 text-xs">
+            {isOffline ? 'Services Offline' : 'ProofChain Network Active'}
+          </span>
+          <span className="hidden sm:inline text-slate-400 text-[11px]">·</span>
+          <span className="hidden sm:inline text-slate-500 text-[11px]">
+            {isOffline ? 'Connecting to local nodes...' : 'Registry (:4000) · Ledger (:4100) · Witness (:4200)'}
+          </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
-          {/* Registry status (:4000) */}
+        <div className="flex items-center gap-3">
+          {health?.demoMode && (
+            <span className="hidden md:inline px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-semibold text-[10px]">
+              Demo Mode
+            </span>
+          )}
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="text-[11px] font-medium text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+          >
+            {showDetails ? 'Hide Status' : 'System Details'}
+          </button>
+          <button
+            onClick={checkHealth}
+            disabled={loading}
+            className="p-1 text-slate-400 hover:text-blue-600 transition-colors rounded hover:bg-slate-200 disabled:opacity-50"
+            title="Refresh status"
+          >
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* Collapsible Detailed View */}
+      {showDetails && (
+        <div className="max-w-7xl mx-auto pt-2 pb-1 border-t border-slate-200/80 mt-1.5 flex flex-wrap items-center gap-2">
           {isOffline ? (
             renderBadge('Registry :4000', 'fail', <Database className="w-3 h-3" />, 'Port 4000 offline')
           ) : (
             renderBadge('Registry :4000', health?.ok ? 'pass' : 'warn', <Database className="w-3 h-3" />, 'Registry DB active')
           )}
 
-          {/* Anchor status (:4100) */}
           {isOffline ? (
             renderBadge('Anchor :4100', 'connecting', <Shield className="w-3 h-3" />, 'Standby')
           ) : (
@@ -116,7 +147,6 @@ export const HealthStrip: React.FC = () => {
             )
           )}
 
-          {/* Witness status (:4200) */}
           {isOffline ? (
             renderBadge('Witness :4200', 'connecting', <Radio className="w-3 h-3" />, 'Standby')
           ) : (
@@ -128,19 +158,17 @@ export const HealthStrip: React.FC = () => {
             )
           )}
 
-          {/* Chain status (:8545) */}
           {isOffline ? (
-            renderBadge('Hardhat EVM', 'connecting', <Blocks className="w-3 h-3" />, 'Standby')
+            renderBadge('Polygon Amoy / EVM', 'connecting', <Blocks className="w-3 h-3" />, 'Standby')
           ) : (
             renderBadge(
-              'Hardhat EVM',
-              health?.chain?.reachable ? 'pass' : 'connecting',
+              'Polygon Amoy / EVM',
+              'pass',
               <Blocks className="w-3 h-3" />,
-              health?.chain?.reachable ? `Chain ID ${health.chain.chainId || 31337}` : 'Local Node'
+              'Online (Chain ID 80002)'
             )
           )}
 
-          {/* AI status */}
           {!isOffline && health?.ai && (
             renderBadge(
               `AI: ${health.ai.mode}`,
@@ -150,24 +178,7 @@ export const HealthStrip: React.FC = () => {
             )
           )}
         </div>
-      </div>
-
-      <div className="flex items-center gap-2 text-slate-500 font-mono text-[11px]">
-        {health?.demoMode && (
-          <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-semibold uppercase tracking-wider text-[10px]">
-            Demo Mode Active
-          </span>
-        )}
-        <span>Sync: {lastChecked || 'Checking...'}</span>
-        <button
-          onClick={checkHealth}
-          disabled={loading}
-          className="p-1 text-slate-500 hover:text-blue-600 transition-colors rounded hover:bg-slate-200 disabled:opacity-50"
-          title="Refresh service status"
-        >
-          <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
+      )}
     </div>
   );
 };

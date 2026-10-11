@@ -58,6 +58,20 @@ export interface RecordResponse {
   createdAt?: string;
 }
 
+export interface RecordItem {
+  id: string;
+  batch_id: string;
+  leaf_index: number;
+  leaf_hash: string;
+  content_hash: string;
+  kind: string;
+  title?: string;
+  file_name?: string;
+  mime?: string;
+  storage_mode?: string;
+  created_at: string;
+}
+
 export interface BatchItem {
   id: string;
   status: 'open' | 'sealed' | 'anchored';
@@ -275,11 +289,12 @@ export const api = {
     }, true);
   },
 
-  // Side 2: Register Manifest (Zero file upload, auth verified via Ed25519)
+  // Side 2: Register Manifest (Auth verified via Ed25519)
   submitManifest(params: {
     manifest: CreatorManifest;
     similarity?: { kind: 'image' | 'text'; value: string };
     confirmedBy: string;
+    fileBase64?: string;
   }): Promise<RecordResponse> {
     return request<RecordResponse>('/api/manifests', {
       method: 'POST',
@@ -289,8 +304,16 @@ export const api = {
   },
 
   // Record details & Proof
+  getRecords(): Promise<RecordItem[]> {
+    return request<RecordItem[]>('/api/records');
+  },
+
   getRecord(recordId: string): Promise<RecordResponse> {
     return request<RecordResponse>(`/api/records/${encodeURIComponent(recordId)}`);
+  },
+
+  lookupRecordByHash(hash: string): Promise<{ record: any; proof: ProofBundle | null }> {
+    return request<{ record: any; proof: ProofBundle | null }>(`/api/records/lookup/${encodeURIComponent(hash)}`);
   },
 
   getProof(recordId: string): Promise<ProofBundle> {
@@ -329,6 +352,18 @@ export const api = {
     title: string;
     latest_record_id: string;
     batch_id: string;
+    file_name?: string;
+    file_ref?: string;
+    mime?: string;
+    content_hash?: string;
+    creator_pub?: string;
+    confirmed_by?: string;
+    storage_mode?: string;
+    description?: string;
+    category?: string;
+    license?: string;
+    creator_name?: string;
+    creator_handle?: string;
   }>> {
     return request('/api/works');
   },

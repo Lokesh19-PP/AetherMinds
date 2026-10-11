@@ -38,19 +38,19 @@ export const Navbar: React.FC = () => {
 
           {/* Clean Navigation Links */}
           <nav className="hidden md:flex items-center gap-1.5 text-sm">
-            <NavLink to="/proofchain" end className={navLinkClass}>
-              <Layers className="w-4 h-4 text-slate-500" />
-              <span>Issuer Dashboard</span>
+            <NavLink to="/proofchain/register" className={navLinkClass}>
+              <FileCheck className="w-4 h-4 text-blue-600" />
+              <span>Register Document</span>
             </NavLink>
 
             <NavLink to="/proofchain/batches" className={navLinkClass}>
-              <FileCheck className="w-4 h-4 text-slate-500" />
-              <span>Batches & Merkle</span>
+              <Layers className="w-4 h-4 text-slate-500" />
+              <span>Batches & Records</span>
             </NavLink>
 
             <NavLink to="/creator" className={navLinkClass}>
               <Feather className="w-4 h-4 text-slate-500" />
-              <span>Creator Studio</span>
+              <span>Creator Protection</span>
             </NavLink>
 
             <NavLink to="/proofchain/tamper-lab" className={navLinkClass}>
@@ -64,7 +64,7 @@ export const Navbar: React.FC = () => {
             <NavLink
               to="/verify"
               className={({ isActive }) =>
-                `flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm ${
+                `flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm ${
                   isActive
                     ? 'bg-blue-700 text-white shadow-blue-600/30 ring-2 ring-blue-500 ring-offset-2'
                     : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/20'
@@ -72,7 +72,7 @@ export const Navbar: React.FC = () => {
               }
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Verify Proof</span>
+              <span>Verify Document</span>
             </NavLink>
           </div>
         </div>
