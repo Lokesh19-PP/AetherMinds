@@ -1,6 +1,19 @@
 import { CoreError } from './errors.js';
 
+/**
+ * Produces deterministic canonical JSON according to Section 6.1:
+ * 1. Object keys sorted by UTF-16 code-unit order.
+ * 2. No whitespace between tokens.
+ * 3. Every string is Unicode NFC normalized.
+ * 4. Allowed types: object, array, string, boolean, null, and integers only.
+ *    Any float, NaN, Infinity, undefined, or function throws CoreError('CANON_UNSUPPORTED').
+ * 5. Duplicate keys after NFC normalization throw CoreError('CANON_DUPLICATE_KEY').
+ */
 export function canonicalJson(value: unknown): string {
+  if (value === undefined || typeof value === 'function' || typeof value === 'symbol') {
+    throw new CoreError('CANON_UNSUPPORTED', `Unsupported value type in canonical JSON: ${typeof value}`);
+  }
+
   if (value === null) {
     return 'null';
   }
@@ -12,7 +25,7 @@ export function canonicalJson(value: unknown): string {
   }
 
   if (type === 'number') {
-    if (!Number.isInteger(value)) {
+    if (!Number.isFinite(value) || !Number.isInteger(value)) {
       throw new CoreError('CANON_UNSUPPORTED', `Only integers are supported in canonical JSON, got ${value}`);
     }
     return (value as number).toString();
@@ -49,6 +62,9 @@ export function canonicalJson(value: unknown): string {
     });
 
     const pairs = normalizedEntries.map((entry) => {
+      if (entry.val === undefined) {
+        throw new CoreError('CANON_UNSUPPORTED', `Undefined value for key ${entry.normKey}`);
+      }
       const keyStr = JSON.stringify(entry.normKey);
       const valStr = canonicalJson(entry.val);
       return `${keyStr}:${valStr}`;

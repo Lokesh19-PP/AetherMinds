@@ -1,0 +1,2 @@
+# Ensure Git never rewrites sample bytes across operating systems
+samples/** -text

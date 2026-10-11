@@ -8,13 +8,17 @@
     "contracts"
   ],
   "scripts": {
-    "test": "vitest run",
     "dev": "concurrently -n web,registry,anchor,witness -c cyan,blue,green,yellow \"npm run dev -w @proofchain/web\" \"npm run dev -w @proofchain/registry\" \"npm run dev -w @proofchain/anchor\" \"npm run dev -w @proofchain/witness\"",
+    "build": "npm run build --workspaces --if-present",
+    "test": "vitest run",
+    "test:workspaces": "npm run test --workspaces --if-present",
+    "seed": "tsx scripts/seed.ts",
     "check:purity": "tsx scripts/checkVerifierPurity.ts"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
+    "concurrently": "^9.0.0",
     "cross-env": "^7.0.3",
+    "pdf-lib": "^1.17.1",
     "tsx": "^4.19.0",
     "typescript": "^5.5.4",
     "vitest": "^2.0.5"
