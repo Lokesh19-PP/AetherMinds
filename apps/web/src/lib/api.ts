@@ -299,9 +299,11 @@ export const api = {
     return request<BatchDetailResponse>(`/api/batches/${encodeURIComponent(batchId)}`);
   },
 
-  sealBatch(): Promise<BatchItem> {
+  sealBatch(batchId?: string): Promise<BatchItem> {
     return request<BatchItem>('/api/batches/seal', {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: batchId ? JSON.stringify({ batchId }) : undefined,
     }, true);
   },
 
