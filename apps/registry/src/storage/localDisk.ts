@@ -66,10 +66,20 @@ export class LocalDiskFileStore implements FileStore {
   }
 
   public async get(ref: string, kind: StoreKind = 'file'): Promise<GetResult> {
-    const filePath = this.getFilePath(ref, kind);
+    let filePath = this.getFilePath(ref, kind);
 
     if (!fs.existsSync(filePath)) {
-      throw new Error(`File not found with ref: ${ref}`);
+      const repoRoot = findMonorepoRoot();
+      const altPaths = [
+        path.join(repoRoot, 'data', 'files', ref),
+        path.join(repoRoot, 'apps', 'registry', 'data', 'files', ref),
+      ];
+      const found = altPaths.find((p) => fs.existsSync(p));
+      if (found) {
+        filePath = found;
+      } else {
+        throw new Error(`File not found with ref: ${ref}`);
+      }
     }
 
     const buffer = fs.readFileSync(filePath);
@@ -135,9 +145,9 @@ export class NoneFileStore implements FileStore {
 }
 
 export function createFileStore(type?: string, baseDir?: string): FileStore {
-  const chosen = (type || process.env.FILE_STORE || 'none').toLowerCase();
-  if (chosen === 'local') {
-    return new LocalDiskFileStore(baseDir);
+  const chosen = (type || process.env.FILE_STORE || 'local').toLowerCase();
+  if (chosen === 'none') {
+    return new NoneFileStore();
   }
-  return new NoneFileStore();
+  return new LocalDiskFileStore(baseDir);
 }

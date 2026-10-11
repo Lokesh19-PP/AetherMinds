@@ -12,37 +12,66 @@ export function createWorksRouter(dbGetter: () => RegistryDB = getDatabase): Rou
     try {
       const db = dbGetter();
       const rows = db.prepare(`
+        WITH ranked AS (
+          SELECT 
+            r.*,
+            ROW_NUMBER() OVER(PARTITION BY COALESCE(r.work_id, r.id) ORDER BY r.created_at DESC, r.version_no DESC) as rn,
+            COUNT(*) OVER(PARTITION BY COALESCE(r.work_id, r.id)) as version_count,
+            MAX(COALESCE(r.version_no, 1)) OVER(PARTITION BY COALESCE(r.work_id, r.id)) as max_version
+          FROM records r
+        )
         SELECT 
-          r.work_id,
-          MAX(r.version_no) as max_version,
-          COUNT(*) as version_count,
-          MAX(r.created_at) as latest_created_at,
-          (SELECT title FROM records r2 WHERE r2.work_id = r.work_id ORDER BY r2.version_no DESC LIMIT 1) as raw_title,
-          (SELECT metadata_json FROM records r2 WHERE r2.work_id = r.work_id ORDER BY r2.version_no DESC LIMIT 1) as latest_meta,
-          (SELECT id FROM records r2 WHERE r2.work_id = r.work_id ORDER BY r2.version_no DESC LIMIT 1) as latest_record_id,
-          (SELECT batch_id FROM records r2 WHERE r2.work_id = r.work_id ORDER BY r2.version_no DESC LIMIT 1) as batch_id
-        FROM records r
-        WHERE r.work_id IS NOT NULL
-        GROUP BY r.work_id
-        ORDER BY latest_created_at DESC
+          COALESCE(work_id, id) as work_id,
+          max_version,
+          version_count,
+          created_at as latest_created_at,
+          title as raw_title,
+          metadata_json as latest_meta,
+          id as latest_record_id,
+          batch_id,
+          file_name,
+          file_ref,
+          mime,
+          content_hash,
+          creator_pub,
+          confirmed_by,
+          storage_mode
+        FROM ranked
+        WHERE rn = 1
+        ORDER BY created_at DESC
       `).all<any>();
 
       const result = rows.map((r) => {
-        let title = r.raw_title;
-        if (!title && r.latest_meta) {
+        let meta: any = {};
+        if (r.latest_meta) {
           try {
-            const parsed = JSON.parse(r.latest_meta);
-            title = parsed.title;
+            meta = JSON.parse(r.latest_meta);
           } catch {}
         }
+        let title = r.raw_title || meta.title || r.file_name || 'Creative Work';
+        const creatorName = meta.creator?.displayName || meta.creatorName || r.confirmed_by || 'Creator';
+        const creatorHandle = meta.creatorHandle || ('@' + creatorName.toLowerCase().replace(/[^a-z0-9]/g, ''));
+
         return {
-          work_id: r.work_id,
-          max_version: r.max_version,
-          version_count: r.version_count,
+          work_id: r.work_id || r.latest_record_id,
+          max_version: r.max_version || 1,
+          version_count: r.version_count || 1,
           latest_created_at: r.latest_created_at,
-          title: title || r.work_id,
+          title,
           latest_record_id: r.latest_record_id,
           batch_id: r.batch_id,
+          file_name: r.file_name,
+          file_ref: r.file_ref,
+          mime: r.mime,
+          content_hash: r.content_hash,
+          creator_pub: r.creator_pub,
+          confirmed_by: r.confirmed_by,
+          storage_mode: r.storage_mode,
+          description: meta.description || 'Verified on immutable ledger and blockchain.',
+          category: meta.category || (r.mime?.startsWith('image/') ? 'Image' : r.mime?.startsWith('video/') ? 'Video' : r.mime?.startsWith('audio/') ? 'Audio' : 'Document'),
+          license: meta.license || 'creativeCommons',
+          creator_name: creatorName,
+          creator_handle: creatorHandle,
         };
       });
       return res.json(result);

@@ -51,7 +51,8 @@ export function createRegistryApp(options?: {
     })
   );
 
-  app.use(express.json({ limit: '10mb' }));
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   // Protected test route for verifying auth middleware
   app.get('/api/protected-check', requireIssuerAuth, (_req, res) => {
@@ -63,7 +64,7 @@ export function createRegistryApp(options?: {
   app.use('/api/records', createRecordsRouter(db, fileStore));
   app.use('/api/batches', createBatchesRouter(db));
   app.use('/api/audit', createAuditRouter(db, fileStore));
-  app.use('/api/manifests', createManifestsRouter(() => db as any));
+  app.use('/api/manifests', createManifestsRouter(() => db as any, () => fileStore));
   app.use('/api/works', createWorksRouter(() => db as any));
   app.use('/api/claims', createClaimsRouter(() => db as any));
   app.use('/api/ai', createAiRouter());

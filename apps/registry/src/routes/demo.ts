@@ -25,17 +25,81 @@ export function createDemoRouter(db: DatabaseSync, fileStore: FileStore): expres
   // POST /api/demo/tamper/db-root (overwrites batch root in DB)
   router.post('/tamper/db-root', (req: Request, res: Response) => {
     ensureBackup();
-    const { batchId = 'b-0001', newRoot } = req.body || {};
+    const { batchId, newRoot } = req.body || {};
+    let targetBatchId = batchId;
+    if (!targetBatchId) {
+      const latest = db.prepare("SELECT id FROM batches WHERE status = 'anchored' ORDER BY id DESC LIMIT 1").get() as any;
+      targetBatchId = latest?.id || 'b-0001';
+    }
     const tamperedRoot = newRoot || 'deadbeef'.repeat(8);
 
-    const info = db.prepare('UPDATE batches SET root = ? WHERE id = ?').run(tamperedRoot, batchId);
+    const info = db.prepare('UPDATE batches SET root = ? WHERE id = ?').run(tamperedRoot, targetBatchId);
     return res.json({
       ok: true,
       tampered: 'db-root',
-      batchId,
+      batchId: targetBatchId,
       newRoot: tamperedRoot,
       changes: info.changes,
     });
+  });
+
+  // POST /api/demo/tamper (generic dispatcher)
+  router.post('/tamper', (req: Request, res: Response) => {
+    ensureBackup();
+    const action = req.body?.action || 'db-root';
+    if (action === 'db-root') {
+      const { batchId, newRoot } = req.body || {};
+      let targetBatchId = batchId;
+      if (!targetBatchId) {
+        const latest = db.prepare("SELECT id FROM batches WHERE status = 'anchored' ORDER BY id DESC LIMIT 1").get() as any;
+        targetBatchId = latest?.id || 'b-0001';
+      }
+      const tamperedRoot = newRoot || 'deadbeef'.repeat(8);
+      const info = db.prepare('UPDATE batches SET root = ? WHERE id = ?').run(tamperedRoot, targetBatchId);
+      return res.json({ ok: true, changed: `Batch ${targetBatchId} root corrupted`, changes: info.changes });
+    }
+
+    if (action === 'delete-record') {
+      const { recordId } = req.body || {};
+      let targetId = recordId;
+      if (!targetId) {
+        const latest = db.prepare('SELECT id FROM records ORDER BY created_at DESC LIMIT 1').get() as any;
+        targetId = latest?.id;
+      }
+      if (!targetId) return res.status(404).json({ ok: false, error: 'No records found to delete' });
+      const info = db.prepare('DELETE FROM records WHERE id = ?').run(targetId);
+      return res.json({ ok: true, changed: `Record ${targetId} deleted from DB`, changes: info.changes });
+    }
+
+    if (action === 'leaf-hash') {
+      const { recordId, newLeafHash } = req.body || {};
+      let targetId = recordId;
+      if (!targetId) {
+        const latest = db.prepare('SELECT id FROM records ORDER BY created_at DESC LIMIT 1').get() as any;
+        targetId = latest?.id;
+      }
+      if (!targetId) return res.status(404).json({ ok: false, error: 'No records found to tamper' });
+      const tamperedLeaf = newLeafHash || 'cafebabe'.repeat(8);
+      const info = db.prepare('UPDATE records SET leaf_hash = ? WHERE id = ?').run(tamperedLeaf, targetId);
+      return res.json({ ok: true, changed: `Record ${targetId} leaf hash altered`, changes: info.changes });
+    }
+
+    if (action === 'content') {
+      const { recordId } = req.body || {};
+      let target = recordId
+        ? (db.prepare('SELECT * FROM records WHERE id = ?').get(recordId) as any)
+        : (db.prepare("SELECT * FROM records WHERE storage_mode = 'copy' LIMIT 1").get() as any);
+      if (!target || !target.file_ref) return res.status(404).json({ ok: false, error: 'No stored copy record found to tamper' });
+      const dataDir = process.env.DATA_DIR || path.resolve(process.cwd(), 'data');
+      const filePath = path.join(dataDir, 'files', target.file_ref);
+      if (fs.existsSync(filePath)) {
+        fs.writeFileSync(filePath, Buffer.from('TAMPERED_BYTES_SIMULATION'));
+        return res.json({ ok: true, changed: `Disk copy of record ${target.id} tampered`, fileRef: target.file_ref });
+      }
+      return res.status(404).json({ ok: false, error: 'Stored file not found on disk' });
+    }
+
+    return res.status(400).json({ ok: false, error: `Unknown tamper action: ${action}` });
   });
 
   // POST /api/demo/tamper/leaf-hash (alters record leaf_hash)
@@ -116,7 +180,7 @@ export function createDemoRouter(db: DatabaseSync, fileStore: FileStore): expres
   });
 
   // POST /api/demo/restore (restores database backup)
-  router.post('/restore', (_req: Request, res: Response) => {
+  const restoreHandler = (_req: Request, res: Response) => {
     if (!backupState) {
       return res.json({ ok: true, message: 'No modifications to restore' });
     }
@@ -154,7 +218,10 @@ export function createDemoRouter(db: DatabaseSync, fileStore: FileStore): expres
     }
 
     return res.json({ ok: true, message: 'Database successfully restored from snapshot' });
-  });
+  };
+
+  router.post('/restore', restoreHandler);
+  router.post('/reset', restoreHandler);
 
   return router;
 }

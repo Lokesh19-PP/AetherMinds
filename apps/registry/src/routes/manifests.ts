@@ -1,9 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { verifyManifest, hashManifest, canonicalJson, CreatorManifest } from '@proofchain/core';
 import { getDatabase, RegistryDB } from '../db';
+import { FileStore } from '../storage/FileStore.js';
 import crypto from 'node:crypto';
 
-export function createManifestsRouter(dbGetter: () => RegistryDB = getDatabase): Router {
+export function createManifestsRouter(
+  dbGetter: () => RegistryDB = getDatabase,
+  fileStoreGetter?: () => FileStore
+): Router {
   const router = Router();
 
   /**
@@ -15,7 +19,7 @@ export function createManifestsRouter(dbGetter: () => RegistryDB = getDatabase):
    * - Inserts record with kind = 'manifest', leaf_hash = hash(canonicalJson(manifest)).
    * - Returns record ID and pending status.
    */
-  router.post('/', (req: Request, res: Response) => {
+  router.post('/', async (req: Request, res: Response) => {
     try {
       const db = dbGetter();
 
@@ -46,7 +50,21 @@ export function createManifestsRouter(dbGetter: () => RegistryDB = getDatabase):
       }
 
       // Verifies manifest signature using @proofchain/core
-      const isValid = verifyManifest(manifest);
+      let isValid = verifyManifest(manifest);
+      if (!isValid && manifest.signature && (manifest.creator as any)?.publicKey) {
+        try {
+          const { signature, ...rest } = manifest as any;
+          const canonStr = canonicalJson(rest);
+          const msgBytes = Buffer.from(canonStr, 'utf8');
+          const sigBytes = Buffer.from(manifest.signature, 'hex');
+          const pubKeyBytes = Buffer.from((manifest.creator as any).publicKey, 'hex');
+          const { ed25519 } = await import('@noble/curves/ed25519');
+          isValid = ed25519.verify(sigBytes, msgBytes, pubKeyBytes);
+        } catch {
+          isValid = false;
+        }
+      }
+
       if (!isValid) {
         return res.status(422).json({
           error: {
@@ -115,13 +133,53 @@ export function createManifestsRouter(dbGetter: () => RegistryDB = getDatabase):
         manifest.creator.displayName ||
         manifest.creator.publicKey;
 
+      const title = manifest.title || manifest.fileName || 'Creative Work';
+
+      let storageMode = 'none';
+      let fileRef: string | null = null;
+      let storeName: string | null = null;
+
+      if (req.body?.fileBase64 && fileStoreGetter) {
+        try {
+          const fileStore = fileStoreGetter();
+          if (fileStore && fileStore.name !== 'none') {
+            const buffer = Buffer.from(req.body.fileBase64, 'base64');
+            const putRes = await fileStore.put({
+              bytes: new Uint8Array(buffer),
+              sha256: manifest.fileHash,
+              mime: manifest.mime || 'application/octet-stream',
+              kind: 'file',
+            });
+            fileRef = putRes.ref;
+            storageMode = 'copy';
+            storeName = fileStore.name;
+          }
+        } catch (err: any) {
+          console.warn('[Manifest FileStore error]:', err.message);
+        }
+      }
+
+      // If no new file uploaded, check if an existing record with same contentHash already has a file_ref!
+      if (!fileRef && manifest.fileHash) {
+        const existingFileRow = db
+          .prepare("SELECT file_ref, storage_mode, store_name FROM records WHERE content_hash = ? AND file_ref IS NOT NULL LIMIT 1")
+          .get<{ file_ref: string; storage_mode: string; store_name: string }>(manifest.fileHash);
+        if (existingFileRow) {
+          fileRef = existingFileRow.file_ref;
+          storageMode = existingFileRow.storage_mode || 'copy';
+          storeName = existingFileRow.store_name;
+        }
+      }
+
       db.prepare(`
         INSERT INTO records (
-          id, batch_id, kind, leaf_hash, content_hash, file_name, mime, size,
+          id, batch_id, kind, leaf_hash, content_hash, title, file_name, mime, size,
+          storage_mode, file_ref, store_name,
           metadata_json, confirmed_by, confirmed_at, manifest_json,
           work_id, version_no, parent_leaf, creator_pub, sim_kind, sim_value, created_at
         ) VALUES (
-          ?, ?, 'manifest', ?, ?, ?, ?, ?,
+          ?, ?, 'manifest', ?, ?, ?, ?, ?, ?,
+          ?, ?, ?,
           ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?
         )
@@ -130,9 +188,13 @@ export function createManifestsRouter(dbGetter: () => RegistryDB = getDatabase):
         openBatch.id,
         leafHash,
         manifest.fileHash,
+        title,
         manifest.fileName || 'unnamed',
         manifest.mime || 'application/octet-stream',
         manifest.size || 0,
+        storageMode,
+        fileRef,
+        storeName,
         JSON.stringify(metadata),
         confirmedBy,
         now,
