@@ -1,0 +1,8 @@
+node_modules/
+dist/
+data/
+anchor-data/
+witness-data/
+.env
+.DS_Store
+*.log
