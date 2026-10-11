@@ -1,5 +1,6 @@
-// @proofchain/core public exports stub
-// Real implementation owned by P1. This stub satisfies type resolution for packages/ai.
+// @proofchain/core public exports
+export * from './canonical';
+export * from './manifest';
 
 export interface Bundle {
   format: string;
