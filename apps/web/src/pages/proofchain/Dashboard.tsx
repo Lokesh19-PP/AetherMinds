@@ -1,32 +1,32 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Layers, FileCheck, FileSearch, Shield, CheckCircle2, ArrowRight, Database, Blocks } from 'lucide-react';
+import { Layers, FileCheck, FileSearch, Shield, CheckCircle2, ArrowRight, Database, Blocks, FlaskConical } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-10">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <div className="text-xs uppercase font-mono tracking-wider text-cerulean font-bold">Side 1 · Institutional Engine</div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Issuer Dashboard</h1>
-          <p className="text-slate text-sm mt-1">
+          <div className="text-xs uppercase font-mono tracking-wider text-blue-600 font-bold">Side 1 · Institutional Engine</div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Issuer Dashboard</h1>
+          <p className="text-slate-600 text-sm mt-1">
             Manage institutional records, view Merkle tree batches, inspect dual anchors, and monitor registry drift.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Link
             to="/proofchain/register"
-            className="px-4 py-2.5 rounded-xl bg-cerulean hover:bg-sky text-white hover:text-ink text-sm font-semibold flex items-center gap-2 transition-all shadow-md shadow-cerulean/20"
+            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold flex items-center gap-2 transition-all shadow-sm shadow-blue-500/20"
           >
             <FileCheck className="w-4 h-4" />
             Register Records
           </Link>
           <Link
             to="/proofchain/batches"
-            className="px-4 py-2.5 rounded-xl bg-deep/50 hover:bg-deep text-silver hover:text-white border border-deep text-sm font-medium flex items-center gap-2 transition-all"
+            className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 hover:text-blue-700 border border-slate-200 text-sm font-semibold flex items-center gap-2 transition-all shadow-2xs"
           >
-            <Layers className="w-4 h-4 text-sky" />
+            <Layers className="w-4 h-4 text-blue-600" />
             View Batches
           </Link>
         </div>
@@ -34,28 +34,28 @@ export const Dashboard: React.FC = () => {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="rounded-2xl border border-deep bg-ink/50 p-6 space-y-2">
-          <div className="text-slate text-xs font-mono uppercase tracking-wider">Total Sealed Batches</div>
-          <div className="text-3xl font-extrabold text-white font-mono">2</div>
-          <div className="text-xs text-emerald-400 font-mono">100% Dual Anchored</div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2 shadow-xs">
+          <div className="text-slate-500 text-xs font-mono uppercase tracking-wider">Total Sealed Batches</div>
+          <div className="text-3xl font-extrabold text-slate-900 font-mono">2</div>
+          <div className="text-xs text-emerald-600 font-semibold font-mono">Dual-Anchored (Ledger + Chain)</div>
         </div>
 
-        <div className="rounded-2xl border border-deep bg-ink/50 p-6 space-y-2">
-          <div className="text-slate text-xs font-mono uppercase tracking-wider">Registered Records</div>
-          <div className="text-3xl font-extrabold text-white font-mono">16</div>
-          <div className="text-xs text-sky font-mono">Canonical Leaves RFC 6962</div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2 shadow-xs">
+          <div className="text-slate-500 text-xs font-mono uppercase tracking-wider">Registered Records</div>
+          <div className="text-3xl font-extrabold text-slate-900 font-mono">16</div>
+          <div className="text-xs text-blue-600 font-semibold font-mono">Canonical RFC 6962 Leaves</div>
         </div>
 
-        <div className="rounded-2xl border border-deep bg-ink/50 p-6 space-y-2">
-          <div className="text-slate text-xs font-mono uppercase tracking-wider">Anchor Ledger Seq</div>
-          <div className="text-3xl font-extrabold text-white font-mono">#2</div>
-          <div className="text-xs text-slate font-mono">Witness Consistency: OK</div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2 shadow-xs">
+          <div className="text-slate-500 text-xs font-mono uppercase tracking-wider">Anchor Ledger Seq</div>
+          <div className="text-3xl font-extrabold text-slate-900 font-mono">#2</div>
+          <div className="text-xs text-emerald-600 font-semibold font-mono">Witness Anti-Fork: OK</div>
         </div>
 
-        <div className="rounded-2xl border border-deep bg-ink/50 p-6 space-y-2">
-          <div className="text-slate text-xs font-mono uppercase tracking-wider">Registry Drift Status</div>
-          <div className="text-3xl font-extrabold text-emerald-400 font-mono">0 DRIFT</div>
-          <div className="text-xs text-emerald-400 font-mono">Audited Just Now</div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2 shadow-xs">
+          <div className="text-slate-500 text-xs font-mono uppercase tracking-wider">Registry Drift Status</div>
+          <div className="text-3xl font-extrabold text-emerald-600 font-mono">0 DRIFT</div>
+          <div className="text-xs text-slate-500 font-mono">Audited & Clean</div>
         </div>
       </div>
 
@@ -63,61 +63,61 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Link
           to="/proofchain/register"
-          className="rounded-2xl border border-deep/80 hover:border-cerulean/60 bg-ink/30 p-6 space-y-4 transition-all group"
+          className="rounded-2xl border border-slate-200 hover:border-blue-300 bg-white p-6 space-y-4 transition-all group shadow-xs hover:shadow-sm"
         >
-          <div className="w-10 h-10 rounded-xl bg-cerulean/20 text-sky flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
             <FileCheck className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white group-hover:text-sky transition-colors">
-              Multi-File Registration
+            <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+              Document Registration
             </h3>
-            <p className="text-slate text-xs mt-1">
-              Drop files, inspect local AI metadata suggestions, confirm human review, and commit to open batch.
+            <p className="text-slate-600 text-xs mt-1">
+              Drop document files, review deterministic metadata, confirm, and commit to open batch.
             </p>
           </div>
-          <div className="text-xs font-semibold text-sky flex items-center gap-1 group-hover:translate-x-1 transition-all">
+          <div className="text-xs font-semibold text-blue-600 flex items-center gap-1 group-hover:translate-x-1 transition-all">
             Open Registration <ArrowRight className="w-3.5 h-3.5" />
           </div>
         </Link>
 
         <Link
           to="/proofchain/batches"
-          className="rounded-2xl border border-deep/80 hover:border-cerulean/60 bg-ink/30 p-6 space-y-4 transition-all group"
+          className="rounded-2xl border border-slate-200 hover:border-blue-300 bg-white p-6 space-y-4 transition-all group shadow-xs hover:shadow-sm"
         >
-          <div className="w-10 h-10 rounded-xl bg-cerulean/20 text-sky flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
             <Layers className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white group-hover:text-sky transition-colors">
-              Merkle Batches & Trees
+            <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+              Batches & Merkle Explorer
             </h3>
-            <p className="text-slate text-xs mt-1">
-              Explore interactive SVG Merkle trees, leaf-to-root folding, and download verified .pcproof.json bundles.
+            <p className="text-slate-600 text-xs mt-1">
+              Inspect batches, view Merkle tree diagrams, seal pending batches, and export proof bundles.
             </p>
           </div>
-          <div className="text-xs font-semibold text-sky flex items-center gap-1 group-hover:translate-x-1 transition-all">
-            Explore Batches <ArrowRight className="w-3.5 h-3.5" />
+          <div className="text-xs font-semibold text-blue-600 flex items-center gap-1 group-hover:translate-x-1 transition-all">
+            View Batches <ArrowRight className="w-3.5 h-3.5" />
           </div>
         </Link>
 
         <Link
-          to="/proofchain/audit"
-          className="rounded-2xl border border-deep/80 hover:border-cerulean/60 bg-ink/30 p-6 space-y-4 transition-all group"
+          to="/proofchain/tamper-lab"
+          className="rounded-2xl border border-amber-200 hover:border-amber-300 bg-white p-6 space-y-4 transition-all group shadow-xs hover:shadow-sm"
         >
-          <div className="w-10 h-10 rounded-xl bg-cerulean/20 text-sky flex items-center justify-center">
-            <FileSearch className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+            <FlaskConical className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white group-hover:text-sky transition-colors">
-              Registry Drift Audit
+            <h3 className="text-lg font-bold text-slate-900 group-hover:text-amber-700 transition-colors">
+              Adversarial Tamper Lab
             </h3>
-            <p className="text-slate text-xs mt-1">
-              Compare database roots, counts, and leaves against immutable anchor ledgers to detect silent data corruption.
+            <p className="text-slate-600 text-xs mt-1">
+              Simulate 5 adversarial attacks (flipped byte, forged proof, ledger edit) and observe defense responses.
             </p>
           </div>
-          <div className="text-xs font-semibold text-sky flex items-center gap-1 group-hover:translate-x-1 transition-all">
-            Run Audit <ArrowRight className="w-3.5 h-3.5" />
+          <div className="text-xs font-semibold text-amber-600 flex items-center gap-1 group-hover:translate-x-1 transition-all">
+            Run Tamper Tests <ArrowRight className="w-3.5 h-3.5" />
           </div>
         </Link>
       </div>

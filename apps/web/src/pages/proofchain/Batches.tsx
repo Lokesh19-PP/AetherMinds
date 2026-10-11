@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Layers, ShieldCheck, CheckCircle2, ArrowRight, Lock, Clock, ExternalLink, RefreshCw, AlertCircle, PlusCircle } from 'lucide-react';
+import { Layers, ArrowRight, Lock, RefreshCw, AlertCircle } from 'lucide-react';
 import { api, BatchItem, getIssuerToken, setIssuerToken } from '../../lib/api';
 
 export const Batches: React.FC = () => {
@@ -53,7 +53,6 @@ export const Batches: React.FC = () => {
         setBatches(fallbackBatches);
       }
     } catch {
-      // Backend offline: use seeded demo batches
       setBatches(fallbackBatches);
     } finally {
       setLoading(false);
@@ -78,7 +77,6 @@ export const Batches: React.FC = () => {
       await loadBatches();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to seal batch');
-      // Still refresh batches to update view
       setTimeout(loadBatches, 500);
     } finally {
       setSealing(false);
@@ -97,19 +95,19 @@ export const Batches: React.FC = () => {
     switch (status) {
       case 'anchored':
         return (
-          <span className="px-2.5 py-0.5 rounded-full bg-success/10 text-emerald-400 border border-success/30 font-semibold uppercase text-[10px] tracking-wide">
-            Anchored (Dual)
+          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold uppercase text-[10px] tracking-wide">
+            Anchored
           </span>
         );
       case 'sealed':
         return (
-          <span className="px-2.5 py-0.5 rounded-full bg-warn/10 text-amber-400 border border-warn/30 font-semibold uppercase text-[10px] tracking-wide">
-            Sealed (Pending Anchor)
+          <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-semibold uppercase text-[10px] tracking-wide">
+            Sealed
           </span>
         );
       default:
         return (
-          <span className="px-2.5 py-0.5 rounded-full bg-sky/10 text-sky border border-sky/30 font-semibold uppercase text-[10px] tracking-wide">
+          <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-semibold uppercase text-[10px] tracking-wide">
             Open (Accepting Records)
           </span>
         );
@@ -121,13 +119,13 @@ export const Batches: React.FC = () => {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="text-xs uppercase font-mono tracking-wider text-cerulean font-bold">
+          <div className="text-xs uppercase font-mono tracking-wider text-blue-600 font-bold">
             Side 1 · Merkle Batches
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
             Batches & Merkle Trees
           </h1>
-          <p className="text-slate text-sm mt-1">
+          <p className="text-slate-600 text-sm mt-1">
             Grouped RFC 6962 Merkle tree batches. Each batch is anchored to the append-only ledger and the local Hardhat smart contract.
           </p>
         </div>
@@ -136,7 +134,7 @@ export const Batches: React.FC = () => {
           <button
             onClick={loadBatches}
             disabled={loading}
-            className="p-2.5 rounded-xl bg-deep/40 hover:bg-deep text-slate hover:text-white border border-deep transition-all"
+            className="p-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200 transition-all shadow-xs"
             title="Refresh Batches"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -145,7 +143,7 @@ export const Batches: React.FC = () => {
           <button
             onClick={handleSeal}
             disabled={sealing}
-            className="px-5 py-2.5 rounded-xl bg-cerulean hover:bg-sky text-white hover:text-ink font-semibold text-sm flex items-center gap-2 transition-all shadow-md shadow-cerulean/20 disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm flex items-center gap-2 transition-all shadow-sm disabled:opacity-50"
           >
             <Lock className="w-4 h-4" />
             {sealing ? 'Sealing & Anchoring...' : 'Seal Open Batch'}
@@ -154,17 +152,17 @@ export const Batches: React.FC = () => {
       </div>
 
       {error && (
-        <div className="p-3.5 rounded-xl bg-danger/10 border border-danger/30 text-rose-300 text-xs font-mono flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-mono flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Batches Table View */}
-      <div className="rounded-2xl border border-deep bg-ink/60 overflow-hidden shadow-xl">
+      <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-deep/40 text-slate uppercase tracking-wider border-b border-deep/60">
+            <thead className="bg-slate-50 text-slate-600 uppercase tracking-wider border-b border-slate-200">
               <tr>
                 <th className="py-3.5 px-4">Batch ID</th>
                 <th className="py-3.5 px-4">Status</th>
@@ -175,35 +173,35 @@ export const Batches: React.FC = () => {
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-deep/40 text-silver">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {batches.map((b) => (
-                <tr key={b.id} className="hover:bg-deep/20 transition-colors">
-                  <td className="py-4 px-4 font-bold text-white">
+                <tr key={b.id} className="hover:bg-blue-50/30 transition-colors">
+                  <td className="py-4 px-4 font-bold text-slate-900">
                     <Link
                       to={`/proofchain/batches/${b.id}`}
-                      className="flex items-center gap-2 hover:text-sky transition-colors"
+                      className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
                     >
-                      <Layers className="w-4 h-4 text-sky" />
+                      <Layers className="w-4 h-4 text-blue-600" />
                       {b.id}
                     </Link>
                   </td>
                   <td className="py-4 px-4">{renderStatusBadge(b.status)}</td>
-                  <td className="py-4 px-4 font-bold text-white">
+                  <td className="py-4 px-4 font-bold text-slate-900">
                     {b.leafCount} {b.leafCount === 1 ? 'record' : 'records'}
                   </td>
-                  <td className="py-4 px-4 text-sky font-mono">
+                  <td className="py-4 px-4 text-blue-700 font-mono font-medium">
                     {b.root && b.root !== 'pending_seal' ? (
                       <span title={b.root}>
                         {b.root.slice(0, 8)}...{b.root.slice(-6)}
                       </span>
                     ) : (
-                      <span className="text-slate italic">Pending batch seal</span>
+                      <span className="text-slate-400 italic">Pending batch seal</span>
                     )}
                   </td>
-                  <td className="py-4 px-4 font-bold text-white">
+                  <td className="py-4 px-4 font-bold text-slate-900">
                     {b.anchorSeq ? `#${b.anchorSeq}` : '—'}
                   </td>
-                  <td className="py-4 px-4 text-slate">
+                  <td className="py-4 px-4 text-slate-500">
                     {b.ethTxHash ? (
                       <span title={b.ethTxHash}>
                         {b.ethTxHash.slice(0, 10)}...{b.ethTxHash.slice(-4)}
@@ -215,7 +213,7 @@ export const Batches: React.FC = () => {
                   <td className="py-4 px-4 text-right">
                     <Link
                       to={`/proofchain/batches/${b.id}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cerulean/20 hover:bg-cerulean text-sky hover:text-white transition-all font-semibold"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white transition-all font-semibold border border-blue-200 hover:border-transparent"
                     >
                       Inspect Merkle Tree <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
@@ -229,29 +227,29 @@ export const Batches: React.FC = () => {
 
       {/* Issuer Access Code Modal */}
       {showTokenModal && (
-        <div className="fixed inset-0 z-50 bg-ink-deep/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full rounded-2xl border border-deep bg-ink p-6 space-y-4 shadow-2xl">
-            <h3 className="text-base font-bold text-white">Enter Issuer Access Code</h3>
-            <p className="text-xs text-slate">
-              Sealing a batch requires the Issuer API Token (<code className="text-sky font-mono">REGISTRY_API_TOKEN</code>) printed by setup.
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="max-w-md w-full rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-xl">
+            <h3 className="text-base font-bold text-slate-900">Enter Issuer Access Code</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Sealing a batch requires the Issuer API Token (<code className="text-blue-700 font-mono">REGISTRY_API_TOKEN</code>) printed by setup.
             </p>
             <input
               type="password"
               placeholder="Paste REGISTRY_API_TOKEN..."
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-ink-deep border border-deep text-white font-mono text-xs focus:border-sky focus:outline-none"
+              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-mono text-xs focus:border-blue-500 focus:bg-white focus:outline-none"
             />
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setShowTokenModal(false)}
-                className="px-4 py-2 rounded-lg bg-deep/40 text-silver text-xs font-semibold"
+                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 border border-slate-200"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveTokenAndSeal}
-                className="px-4 py-2 rounded-lg bg-cerulean hover:bg-sky text-white hover:text-ink text-xs font-semibold"
+                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm"
               >
                 Save & Seal Batch
               </button>

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Upload, FileText, Image as ImageIcon, CheckCircle2, AlertCircle, X, ShieldCheck } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, AlertCircle, X, ShieldCheck } from 'lucide-react';
 import { hashFile, FileHashResult } from '../lib/fileHash';
 import { generateThumbnail, ThumbnailResult } from '../lib/thumbnail';
 import { computeDHash } from '../lib/similarity';
@@ -26,7 +26,7 @@ export interface FileDropProps {
 
 export const FileDrop: React.FC<FileDropProps> = ({
   accept = '*/*',
-  maxSizeMb = 100, // Client hashing can handle large files
+  maxSizeMb = 100,
   label = 'Drop file to hash in browser',
   sublabel = 'Pure client-side streaming SHA-256. Zero bits leave your device.',
   enableThumbnail = true,
@@ -52,14 +52,12 @@ export const FileDrop: React.FC<FileDropProps> = ({
       setTotalBytes(file.size);
 
       try {
-        // Step 1: Streaming chunked SHA-256
         const hashResult: FileHashResult = await hashFile(file, (pct, processed, total) => {
           setProgress(pct);
           setProcessedBytes(processed);
           setTotalBytes(total);
         });
 
-        // Step 2: Optional canvas thumbnail (for images/videos)
         let thumbnail: ThumbnailResult | undefined;
         let dHash: string | undefined;
 
@@ -74,7 +72,6 @@ export const FileDrop: React.FC<FileDropProps> = ({
           }
         }
 
-        // Step 3: Optional 64-bit dHash (images only)
         if (enableDHash && isImage) {
           try {
             dHash = await computeDHash(file);
@@ -104,19 +101,16 @@ export const FileDrop: React.FC<FileDropProps> = ({
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDragging(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDragging(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDragging(false);
 
     const droppedFile = e.dataTransfer.files?.[0];
@@ -152,8 +146,8 @@ export const FileDrop: React.FC<FileDropProps> = ({
           onClick={() => fileInputRef.current?.click()}
           className={`relative rounded-2xl border-2 border-dashed p-8 text-center cursor-pointer transition-all duration-200 group ${
             isDragging
-              ? 'border-sky bg-sky/10 shadow-lg shadow-sky/10'
-              : 'border-deep/80 hover:border-cerulean/60 bg-ink/40 hover:bg-ink/60'
+              ? 'border-blue-600 bg-blue-50/60 shadow-md shadow-blue-500/10'
+              : 'border-slate-300 hover:border-blue-500 bg-white hover:bg-blue-50/20 shadow-sm'
           }`}
         >
           <input
@@ -165,51 +159,51 @@ export const FileDrop: React.FC<FileDropProps> = ({
           />
 
           <div className="space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-deep/40 text-sky mx-auto flex items-center justify-center group-hover:scale-105 group-hover:text-white transition-all shadow-md">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center group-hover:scale-105 group-hover:bg-blue-100 transition-all shadow-sm">
               <Upload className="w-7 h-7" />
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-base font-bold text-white group-hover:text-sky transition-colors">
+              <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                 {label}
               </h3>
-              <p className="text-xs text-slate max-w-sm mx-auto leading-relaxed">
+              <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
                 {sublabel}
               </p>
             </div>
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-deep/50 text-[11px] font-mono text-silver border border-silver/10">
-              <ShieldCheck className="w-3.5 h-3.5 text-sky" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-[11px] font-mono text-slate-600 border border-slate-200">
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
               <span>Max size: {maxSizeMb} MB</span>
             </div>
           </div>
         </div>
       ) : (
         /* Completed file view */
-        <div className="rounded-2xl border border-deep bg-ink/80 p-5 space-y-4 shadow-xl">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               {result.thumbnail ? (
                 <img
                   src={result.thumbnail.dataUrl}
                   alt="Thumbnail"
-                  className="w-14 h-14 rounded-xl object-cover border border-deep shadow-md"
+                  className="w-14 h-14 rounded-xl object-cover border border-slate-200 shadow-sm"
                 />
               ) : (
-                <div className="w-14 h-14 rounded-xl bg-deep/40 text-sky flex items-center justify-center border border-deep/60">
+                <div className="w-14 h-14 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
                   <FileText className="w-7 h-7" />
                 </div>
               )}
 
               <div className="space-y-0.5">
-                <div className="text-sm font-bold text-white truncate max-w-xs sm:max-w-md">
+                <div className="text-sm font-bold text-slate-900 truncate max-w-xs sm:max-w-md">
                   {result.file.name}
                 </div>
-                <div className="text-[11px] font-mono text-slate">
+                <div className="text-[11px] font-mono text-slate-500">
                   {(result.file.size / 1024).toFixed(1)} KB · {result.file.type || 'binary/raw'}
                 </div>
                 {result.dHash && (
-                  <div className="text-[10px] font-mono text-sky">
+                  <div className="text-[10px] font-mono text-blue-600">
                     64-bit dHash: {result.dHash}
                   </div>
                 )}
@@ -218,39 +212,36 @@ export const FileDrop: React.FC<FileDropProps> = ({
 
             <button
               onClick={handleReset}
-              className="p-1.5 rounded-lg text-slate hover:text-white hover:bg-deep/40 transition-colors"
-              title="Remove File"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              title="Remove file"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Hash details */}
-          <HashProgress
-            progress={100}
-            totalBytes={result.file.size}
-            processedBytes={result.file.size}
-            hash={result.hash}
-            isComplete={true}
-            label="Verified Content SHA-256"
-          />
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 font-mono text-xs flex items-center justify-between gap-2">
+            <span className="text-slate-500 text-[11px] select-none">SHA-256:</span>
+            <span className="text-slate-800 font-bold truncate text-[11px] select-all">
+              {result.hash}
+            </span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+          </div>
         </div>
       )}
 
-      {/* Real-time processing progress */}
+      {/* In-progress hashing view */}
       {isProcessing && (
         <HashProgress
           progress={progress}
           processedBytes={processedBytes}
           totalBytes={totalBytes}
-          label="Streaming Hashing in Progress..."
         />
       )}
 
-      {/* Error notification */}
+      {/* Error state */}
       {error && (
-        <div className="p-3 rounded-xl bg-danger/10 border border-danger/30 text-rose-300 text-xs font-mono flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
           <span>{error}</span>
         </div>
       )}

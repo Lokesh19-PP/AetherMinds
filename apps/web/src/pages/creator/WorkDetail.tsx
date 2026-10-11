@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Feather, PlusCircle, RefreshCw, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Feather, PlusCircle, RefreshCw } from 'lucide-react';
 import { api, WorkVersion, ClaimItem } from '../../lib/api';
 import { TrailTimeline } from '../../components/TrailTimeline';
 import { ClaimsPanel } from '../../components/ClaimsPanel';
@@ -13,7 +13,7 @@ export const WorkDetail: React.FC = () => {
   const [versions, setVersions] = useState<WorkVersion[]>([]);
   const [claims, setClaims] = useState<ClaimItem[]>([]);
 
-  // Fallback demo creation trail data
+  // Realistic fallback demo creation trail data
   const fallbackVersions: WorkVersion[] = [
     {
       version: 2,
@@ -38,7 +38,6 @@ export const WorkDetail: React.FC = () => {
       const data = await api.getWorks(workId);
       if (data && data.versions && data.versions.length > 0) {
         setVersions(data.versions);
-        // Query claims for latest version
         if (data.versions[0]?.leafHash) {
           const claimsRes = await api.getClaims(data.versions[0].leafHash);
           if (claimsRes && claimsRes.claims) {
@@ -63,7 +62,7 @@ export const WorkDetail: React.FC = () => {
     <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-8 font-sans">
       <Link
         to="/creator"
-        className="inline-flex items-center gap-2 text-xs font-mono text-slate hover:text-sky transition-colors"
+        className="inline-flex items-center gap-2 text-xs font-mono text-slate-500 hover:text-blue-600 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" /> Back to Creator Studio
       </Link>
@@ -71,14 +70,14 @@ export const WorkDetail: React.FC = () => {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="text-xs uppercase font-mono tracking-wider text-sky font-bold flex items-center gap-1.5">
-            <Feather className="w-4 h-4 text-sky" />
+          <div className="text-xs uppercase font-mono tracking-wider text-blue-600 font-bold flex items-center gap-1.5">
+            <Feather className="w-4 h-4 text-blue-600" />
             Provenance & Version Trail
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight mt-1 flex items-center gap-3">
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mt-1 flex items-center gap-3">
             Work: {workId}
           </h1>
-          <p className="text-slate text-sm mt-1">
+          <p className="text-slate-600 text-sm mt-1">
             Immutable version timeline anchored across RFC 6962 batches. Each version binds cryptographically to its parent leaf.
           </p>
         </div>
@@ -87,7 +86,7 @@ export const WorkDetail: React.FC = () => {
           <button
             onClick={loadWorkData}
             disabled={loading}
-            className="p-2.5 rounded-xl bg-deep/40 hover:bg-deep text-slate hover:text-white border border-deep transition-all"
+            className="p-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200 transition-all shadow-xs"
             title="Refresh Trail"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -95,7 +94,7 @@ export const WorkDetail: React.FC = () => {
 
           <Link
             to="/creator/new"
-            className="px-4 py-2.5 rounded-xl bg-cerulean hover:bg-sky text-white hover:text-ink font-semibold flex items-center gap-2 shadow-md shadow-cerulean/20"
+            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold flex items-center gap-2 shadow-sm transition-all"
           >
             <PlusCircle className="w-4 h-4" /> Add New Version
           </Link>
