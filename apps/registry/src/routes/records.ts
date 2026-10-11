@@ -18,126 +18,136 @@ export function createRecordsRouter(db: DatabaseSync, fileStore: FileStore): exp
 
   // POST /api/records
   router.post('/', requireIssuerAuth, async (req: Request, res: Response) => {
-    const {
-      metadata,
-      confirmedBy,
-      title,
-      fileName,
-      mime = 'application/octet-stream',
-      size,
-      storeCopy = false,
-      contentHash: providedContentHash,
-      leafHash: providedLeafHash,
-      fileBase64,
-      fileHex,
-    } = req.body || {};
+    try {
+      const {
+        metadata,
+        confirmedBy,
+        title,
+        fileName,
+        mime = 'application/octet-stream',
+        size,
+        storeCopy = false,
+        contentHash: providedContentHash,
+        leafHash: providedLeafHash,
+        fileBase64,
+        fileHex,
+      } = req.body || {};
 
-    // 1. Enforce confirmed metadata rule
-    if (!metadata || !confirmedBy) {
-      return res.status(422).json({
-        error: {
-          code: 'NOT_CONFIRMED',
-          message: 'Human-confirmed metadata and confirmedBy are required to register a record',
-        },
-      });
-    }
-
-    // 2. Resolve file bytes and domain-separated hashes
-    let contentHash = providedContentHash;
-    let leafHash = providedLeafHash;
-    let fileBytes: Uint8Array | null = null;
-
-    if (fileBase64) {
-      fileBytes = new Uint8Array(Buffer.from(fileBase64, 'base64'));
-    } else if (fileHex) {
-      fileBytes = hexToBytes(fileHex);
-    }
-
-    if (fileBytes) {
-      contentHash = sha256Hex(fileBytes);
-      leafHash = computeLeafHash(fileBytes);
-    }
-
-    if (!contentHash || !leafHash) {
-      return res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Either file content or valid contentHash and leafHash must be provided',
-        },
-      });
-    }
-
-    // 3. Duplicate check (same leaf hash is rejected)
-    const existing = db.prepare('SELECT id, batch_id FROM records WHERE leaf_hash = ?').get(leafHash) as any;
-    if (existing) {
-      return res.status(409).json({
-        error: {
-          code: 'DUPLICATE',
-          message: 'A record with this exact content and leaf hash has already been registered',
-          details: { existingRecordId: existing.id, batchId: existing.batch_id },
-        },
-      });
-    }
-
-    // 4. Locate current open batch
-    const openBatch = getOpenBatch(db);
-
-    // 5. Storage handling (Section 19: default is 'none')
-    let storageMode: 'none' | 'preview' | 'copy' = 'none';
-    let fileRef: string | null = null;
-    let storeName: string | null = null;
-
-    if (storeCopy && fileBytes && fileStore.name !== 'none') {
-      try {
-        const putRes = await fileStore.put({
-          bytes: fileBytes,
-          sha256: contentHash,
-          mime,
-          kind: 'file',
+      // 1. Enforce confirmed metadata rule
+      if (!metadata || !confirmedBy) {
+        return res.status(422).json({
+          error: {
+            code: 'NOT_CONFIRMED',
+            message: 'Human-confirmed metadata and confirmedBy are required to register a record',
+          },
         });
-        fileRef = putRes.ref;
-        storageMode = 'copy';
-        storeName = fileStore.name;
-      } catch (err: any) {
-        console.warn(`[FileStore] Storage failed: ${err.message}`);
       }
+
+      // 2. Resolve file bytes and domain-separated hashes
+      let contentHash = providedContentHash;
+      let leafHash = providedLeafHash;
+      let fileBytes: Uint8Array | null = null;
+
+      if (fileBase64) {
+        fileBytes = new Uint8Array(Buffer.from(fileBase64, 'base64'));
+      } else if (fileHex) {
+        fileBytes = hexToBytes(fileHex);
+      }
+
+      if (fileBytes) {
+        contentHash = sha256Hex(fileBytes);
+        leafHash = computeLeafHash(fileBytes);
+      }
+
+      if (!contentHash || !leafHash) {
+        return res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Either file content or valid contentHash and leafHash must be provided',
+          },
+        });
+      }
+
+      // 3. Duplicate check (same leaf hash is rejected)
+      const existing = db.prepare('SELECT id, batch_id FROM records WHERE leaf_hash = ?').get(leafHash) as any;
+      if (existing) {
+        return res.status(409).json({
+          error: {
+            code: 'DUPLICATE',
+            message: 'A record with this exact content and leaf hash has already been registered',
+            details: { existingRecordId: existing.id, batchId: existing.batch_id },
+          },
+        });
+      }
+
+      // 4. Locate current open batch
+      const openBatch = getOpenBatch(db);
+
+      // 5. Storage handling (Section 19: default is 'none')
+      let storageMode: 'none' | 'preview' | 'copy' = 'none';
+      let fileRef: string | null = null;
+      let storeName: string | null = null;
+
+      if (storeCopy && fileBytes && fileStore.name !== 'none') {
+        try {
+          const putRes = await fileStore.put({
+            bytes: fileBytes,
+            sha256: contentHash,
+            mime,
+            kind: 'file',
+          });
+          fileRef = putRes.ref;
+          storageMode = 'copy';
+          storeName = fileStore.name;
+        } catch (err: any) {
+          console.warn(`[FileStore] Storage failed: ${err.message}`);
+        }
+      }
+
+      // 6. Insert record into open batch
+      const recordId = crypto.randomUUID();
+      const createdAt = new Date().toISOString();
+      const metadataStr = typeof metadata === 'string' ? metadata : JSON.stringify(metadata);
+
+      db.prepare(`
+        INSERT INTO records (
+          id, batch_id, content_hash, leaf_hash, kind, title,
+          file_name, mime, size, storage_mode, file_ref, store_name,
+          metadata_json, confirmed_by, confirmed_at, created_at
+        ) VALUES (?, ?, ?, ?, 'file', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        recordId,
+        openBatch.id,
+        contentHash,
+        leafHash,
+        title || fileName || 'Untitled Document',
+        fileName || null,
+        mime,
+        size || (fileBytes ? fileBytes.length : 0),
+        storageMode,
+        fileRef,
+        storeName,
+        metadataStr,
+        confirmedBy,
+        createdAt,
+        createdAt
+      );
+
+      return res.status(201).json({
+        recordId,
+        leafHash,
+        status: 'pending',
+        batchId: openBatch.id,
+      });
+    } catch (err: any) {
+      console.error('[POST /api/records error]:', err);
+      return res.status(500).json({
+        error: {
+          code: 'SERVER_ERROR',
+          message: err?.message || 'Error occurred while registering record',
+        },
+      });
     }
-
-    // 6. Insert record into open batch
-    const recordId = crypto.randomUUID();
-    const createdAt = new Date().toISOString();
-    const metadataStr = typeof metadata === 'string' ? metadata : JSON.stringify(metadata);
-
-    db.prepare(`
-      INSERT INTO records (
-        id, batch_id, content_hash, leaf_hash, kind, title,
-        file_name, mime, size, storage_mode, file_ref, store_name,
-        metadata_json, confirmed_by, confirmed_at, created_at
-      ) VALUES (?, ?, ?, ?, 'file', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      recordId,
-      openBatch.id,
-      contentHash,
-      leafHash,
-      title || fileName || 'Untitled Document',
-      fileName || null,
-      mime,
-      size || (fileBytes ? fileBytes.length : 0),
-      storageMode,
-      fileRef,
-      storeName,
-      metadataStr,
-      confirmedBy,
-      createdAt,
-      createdAt
-    );
-
-    return res.status(201).json({
-      recordId,
-      leafHash,
-      status: 'pending',
-      batchId: openBatch.id,
-    });
   });
 
   // GET /api/records/:id

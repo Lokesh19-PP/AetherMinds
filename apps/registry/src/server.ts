@@ -16,7 +16,22 @@ import { createWorksRouter } from './routes/works.js';
 import { createClaimsRouter } from './routes/claims.js';
 import { createAiRouter } from './routes/ai.js';
 
-dotenv.config();
+import fs from 'node:fs';
+
+function loadEnvFile(): void {
+  let curr = process.cwd();
+  while (curr && curr !== path.dirname(curr)) {
+    const envFile = path.join(curr, '.env');
+    if (fs.existsSync(envFile)) {
+      dotenv.config({ path: envFile });
+      return;
+    }
+    curr = path.dirname(curr);
+  }
+  dotenv.config();
+}
+
+loadEnvFile();
 
 export function createRegistryApp(options?: {
   dbPath?: string;
