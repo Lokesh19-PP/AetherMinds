@@ -56,13 +56,15 @@ export const Verify: React.FC = () => {
         const parsed = JSON.parse(pastedLedgerJson);
         ledgerReader = new StaticLedgerReader(Array.isArray(parsed) ? parsed : [parsed]);
       } else {
-        const apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+        const rawBase = (import.meta.env.VITE_API_URL || '').trim();
+        const apiBase = (rawBase && !rawBase.includes('<') && !rawBase.includes('>')) ? rawBase.replace(/\/+$/, '') : '';
         const anchorUrl = import.meta.env.VITE_ANCHOR_URL || (apiBase ? `${apiBase}/api/anchor` : 'http://localhost:4100');
         ledgerReader = new HttpLedgerReader(anchorUrl);
       }
 
       const chainReader = new EthereumReader(pinnedEthereum);
-      const apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+      const rawBase = (import.meta.env.VITE_API_URL || '').trim();
+      const apiBase = (rawBase && !rawBase.includes('<') && !rawBase.includes('>')) ? rawBase.replace(/\/+$/, '') : '';
       const witnessUrl = import.meta.env.VITE_WITNESS_URL || (apiBase ? `${apiBase}/api/witness` : 'http://localhost:4200');
       const witnessReader = new HttpWitnessReader(witnessUrl);
 

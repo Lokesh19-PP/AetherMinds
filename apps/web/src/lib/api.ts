@@ -209,7 +209,13 @@ async function request<T>(
     }
   } catch {}
 
-  const apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+  const rawBase = (import.meta.env.VITE_API_URL || '').trim();
+  if (rawBase.includes('<') || rawBase.includes('>')) {
+    throw new Error(
+      `Invalid VITE_API_URL: "${rawBase}" contains placeholder brackets "<...>". In your Vercel Project Settings > Environment Variables, replace this with your actual Render URL (e.g. https://proofchain-backend.onrender.com).`
+    );
+  }
+  const apiBase = rawBase.replace(/\/+$/, '');
   const fullUrl = path.startsWith('http') ? path : `${apiBase}${path}`;
 
   const response = await fetch(fullUrl, {
