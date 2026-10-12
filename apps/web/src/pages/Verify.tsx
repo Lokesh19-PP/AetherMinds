@@ -121,6 +121,32 @@ export const Verify: React.FC = () => {
         if (lookupRes && lookupRes.record) {
           setFoundRecord(lookupRes.record);
 
+          // If the file name was altered from the registered name, mark as REJECTED
+          const isNameAltered = lookupRes.record.file_name && file.name !== lookupRes.record.file_name;
+          if (isNameAltered) {
+            setVerifyResult({
+              verdict: 'INVALID',
+              code: 'FILENAME_MISMATCH',
+              message: `REJECTED: File Name Altered. Expected "${lookupRes.record.file_name}", but found "${file.name}".`,
+              warnings: [`Original registered filename was "${lookupRes.record.file_name}", but uploaded as "${file.name}".`],
+              steps: [
+                {
+                  id: 'hash_check',
+                  label: 'Cryptographic SHA-256 Digest Matching',
+                  status: 'pass',
+                  detail: 'Uploaded file byte content matches registered institutional hash.',
+                },
+                {
+                  id: 'filename_check',
+                  label: 'Filename & Metadata Verification',
+                  status: 'fail',
+                  detail: `REJECTED: File name was altered from "${lookupRes.record.file_name}" to "${file.name}".`,
+                },
+              ],
+            });
+            return;
+          }
+
           let proof = lookupRes.proof;
           // If the batch was still open, auto-seal it so cryptographic proof is finalized
           if (!proof && lookupRes.record.batch_id) {
@@ -474,36 +500,54 @@ export const Verify: React.FC = () => {
           </div>
 
           {verifyResult && foundRecord && (
-            <div className="rounded-2xl border border-emerald-200 bg-white p-6 space-y-5 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-emerald-100">
+            <div className={`rounded-2xl border p-6 space-y-5 shadow-sm transition-all ${
+              verifyResult.verdict === 'INVALID' ? 'border-rose-300 bg-white' : 'border-emerald-200 bg-white'
+            }`}>
+              <div className={`flex flex-wrap items-center justify-between gap-3 pb-3 border-b ${
+                verifyResult.verdict === 'INVALID' ? 'border-rose-100' : 'border-emerald-100'
+              }`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    verifyResult.verdict === 'INVALID' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
+                  }`}>
+                    {verifyResult.verdict === 'INVALID' ? (
+                      <XCircle className="w-6 h-6 text-rose-600" />
+                    ) : (
+                      <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                    )}
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-slate-900">
-                      Matches the Registered Record
+                      {verifyResult.verdict === 'INVALID'
+                        ? 'REJECTED: File Name Altered (FILENAME_MISMATCH)'
+                        : 'Matches the Registered Record'}
                     </h2>
                     <p className="text-xs text-slate-500">
-                      Cryptographic hash verified against append-only ledger and anchor.
+                      {verifyResult.verdict === 'INVALID'
+                        ? `The document content matches registered record "${foundRecord.title || foundRecord.file_name}", but the filename was changed from "${foundRecord.file_name}" to "${docFile?.name}". Flagged as tampered.`
+                        : 'Cryptographic hash verified against append-only ledger and anchor.'}
                     </p>
                   </div>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold uppercase text-xs">
-                  {foundRecord.batch_status || 'Anchored'}
+                <span className={`px-3 py-1 rounded-full font-bold uppercase text-xs border ${
+                  verifyResult.verdict === 'INVALID'
+                    ? 'bg-rose-50 text-rose-700 border-rose-200'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                }`}>
+                  {verifyResult.verdict === 'INVALID' ? 'REJECTED' : (foundRecord.batch_status || 'Anchored')}
                 </span>
               </div>
 
               {/* Informative Callout if file was renamed */}
-              {docFile && foundRecord.file_name && docFile.name !== foundRecord.file_name && (
-                <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5">
-                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              {verifyResult.verdict === 'INVALID' && docFile && foundRecord.file_name && docFile.name !== foundRecord.file_name && (
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900 flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                   <div className="space-y-0.5">
-                    <div className="font-bold text-amber-900">
-                      File Renamed — Content Authenticity 100% Preserved
+                    <div className="font-bold text-rose-900">
+                      Metadata Tamper Detected — Verification Rejected
                     </div>
-                    <p className="text-amber-800/90 leading-relaxed">
-                      The uploaded file is named <span className="font-mono font-semibold bg-amber-100 px-1 py-0.5 rounded">{docFile.name}</span>, but was originally registered as <span className="font-mono font-semibold bg-amber-100 px-1 py-0.5 rounded">{foundRecord.file_name || foundRecord.title}</span>. Because ProofChain verifies the cryptographic SHA-256 content digest, renaming the file does not compromise its validity.
+                    <p className="text-rose-800/90 leading-relaxed">
+                      The file was originally registered with filename <span className="font-mono font-semibold bg-rose-100 px-1 py-0.5 rounded">{foundRecord.file_name}</span>, but uploaded as <span className="font-mono font-semibold bg-rose-100 px-1 py-0.5 rounded">{docFile.name}</span>. The verifier enforces strict filename integrity and rejects altered files.
                     </p>
                   </div>
                 </div>
