@@ -3,7 +3,7 @@ services:
     name: proofchain-backend
     runtime: node
     plan: free
-    buildCommand: npm install && npx tsx scripts/setup.ts
+    buildCommand: npm install --include=dev && npx tsx scripts/setup.ts
     startCommand: npm run start:backend
     envVars:
       - key: NODE_ENV

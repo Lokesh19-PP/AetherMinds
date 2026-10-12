@@ -18,17 +18,19 @@
     "chain:node": "npm run chain -w @proofchain/contracts",
     "chain:deploy": "npm run deploy -w @proofchain/contracts",
     "setup": "tsx scripts/setup.ts",
-    "start:backend": "concurrently -n anchor,witness,registry -c green,yellow,blue \"npm run dev -w @proofchain/anchor\" \"npm run dev -w @proofchain/witness\" \"npm run dev -w @proofchain/registry\"",
+    "start:backend": "concurrently -n anchor,witness,registry -c green,yellow,blue \"npm run start -w @proofchain/anchor\" \"npm run start -w @proofchain/witness\" \"npm run start -w @proofchain/registry\"",
     "start": "npm run start:backend",
     "demo:tamper": "tsx scripts/demoTamper.ts",
     "check:purity": "tsx scripts/checkVerifierPurity.ts"
   },
-  "devDependencies": {
+  "dependencies": {
     "concurrently": "^9.0.0",
     "cross-env": "^7.0.3",
-    "pdf-lib": "^1.17.1",
     "tsx": "^4.19.0",
-    "typescript": "^5.5.4",
+    "typescript": "^5.5.4"
+  },
+  "devDependencies": {
+    "pdf-lib": "^1.17.1",
     "vitest": "^2.0.5"
   }
 }
