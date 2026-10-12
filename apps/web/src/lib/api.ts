@@ -124,18 +124,25 @@ export interface ClaimsResponse {
   claims: ClaimItem[];
 }
 
+export type { ProofBundle, CreatorManifest, VerifyResult };
+
 export interface AuditIssue {
   code: 'REGISTRY_DRIFT';
   kind: 'ROOT_DRIFT' | 'DB_ROOT_DRIFT' | 'COUNT_DRIFT' | 'LEAF_DRIFT' | 'CONTENT_DRIFT' | 'ANCHOR_REF_DRIFT';
   batchId: string;
   recordId?: string;
-  expected: string;
-  found: string;
+  expected: string | number;
+  found: string | number;
+  details?: string;
 }
 
 export interface AuditResponse {
   ok: boolean;
   issues: AuditIssue[];
+  runAt?: string;
+  batchesAudited?: number;
+  recordsAudited?: number;
+  issueCount?: number;
 }
 
 export interface ApiError {
@@ -469,11 +476,12 @@ export const api = {
   },
 
   // Demo Tamper Lab
-  demoTamper(action: string, target?: string): Promise<{ ok: boolean; changed: string }> {
+  demoTamper(action: string, params?: { batchId?: string; recordId?: string; newRoot?: string } | string): Promise<{ ok: boolean; changed: string }> {
+    const payload = typeof params === 'string' ? { action, target: params } : { action, ...params };
     return request<{ ok: boolean; changed: string }>('/api/demo/tamper', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, target }),
+      body: JSON.stringify(payload),
     });
   },
 
