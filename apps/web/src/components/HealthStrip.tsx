@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Activity, RefreshCw, Database, Shield, Radio, Blocks, Cpu } from 'lucide-react';
+import { api } from '../lib/api';
 
 export interface HealthData {
   ok: boolean;
@@ -34,13 +35,9 @@ export const HealthStrip: React.FC = () => {
   const checkHealth = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/health');
-      if (!res.ok) {
-        throw new Error(`Health check returned status ${res.status}`);
-      }
-      const data: HealthData = await res.json();
-      setHealth(data);
-      setIsOffline(false);
+      const data = await api.getHealth();
+      setHealth(data as HealthData);
+      setIsOffline(!data.ok);
     } catch {
       setIsOffline(true);
       setHealth(null);

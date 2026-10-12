@@ -191,7 +191,13 @@ async function request<T>(
   const headers = new Headers(options.headers || {});
 
   if (requiresAuth) {
-    const token = getIssuerToken() || DEFAULT_DEV_ISSUER_TOKEN;
+    let token: string | null = null;
+    try {
+      token = localStorage.getItem('proofchain_auth_token');
+    } catch {}
+    if (!token) {
+      token = getIssuerToken() || DEFAULT_DEV_ISSUER_TOKEN;
+    }
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }
