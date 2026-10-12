@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: proofchain-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install && npx tsx scripts/setup.ts
+    startCommand: npm run start:backend
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ANCHOR_MODE
+        value: ledger
+      - key: REGISTRY_PORT
+        value: 4000
+      - key: ANCHOR_PORT
+        value: 4100
+      - key: WITNESS_PORT
+        value: 4200
+      - key: ANCHOR_URL
+        value: http://127.0.0.1:4100
+      - key: WITNESS_URL
+        value: http://127.0.0.1:4200
+      - key: WEB_ORIGIN
+        value: "*"
+      - key: DEMO_MODE
+        value: "true"
+      - key: FILE_STORE
+        value: local
+      - key: DATA_DIR
+        value: ./data
+      - key: ANCHOR_DATA_DIR
+        value: ./anchor-data
+      - key: WITNESS_DATA_DIR
+        value: ./witness-data

@@ -312,13 +312,14 @@ export const BatchDetail: React.FC = () => {
               <tr>
                 <th className="py-3 px-3">#</th>
                 <th className="py-3 px-3">Document Title / File</th>
+                <th className="py-3 px-3">Certified Registrant</th>
                 <th className="py-3 px-3">Record ID</th>
                 <th className="py-3 px-3">Cryptographic Leaf Hash</th>
                 <th className="py-3 px-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {currentBatch.records?.map((rec, i) => (
+              {currentBatch.records?.map((rec: any, i) => (
                 <tr
                   key={rec.id}
                   onClick={() => setSelectedLeaf(rec.index)}
@@ -335,8 +336,26 @@ export const BatchDetail: React.FC = () => {
                       <div className="text-[10px] text-slate-400 font-normal">{rec.fileName}</div>
                     )}
                   </td>
+                  <td className="py-3.5 px-3">
+                    <div className="font-sans font-medium text-slate-800 text-xs flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold">
+                        {(rec.registered_by_name || rec.confirmed_by || 'A')[0]}
+                      </span>
+                      <span>{rec.registered_by_name || rec.confirmed_by || 'Institutional Registrar'}</span>
+                    </div>
+                    {rec.registered_by_email && (
+                      <div className="text-[10px] text-slate-400 font-mono">{rec.registered_by_email}</div>
+                    )}
+                  </td>
                   <td className="py-3.5 px-3 font-mono text-slate-600">
-                    {rec.id.slice(0, 8)}...{rec.id.slice(-4)}
+                    <Link
+                      to={`/proofchain/records/${rec.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="hover:text-blue-600 hover:underline"
+                      title="Inspect record cryptographic details"
+                    >
+                      {rec.id.slice(0, 8)}...{rec.id.slice(-4)}
+                    </Link>
                   </td>
                   <td className="py-3.5 px-3 text-slate-500 font-mono" title={rec.leafHash}>
                     {rec.leafHash ? `${rec.leafHash.slice(0, 10)}...${rec.leafHash.slice(-8)}` : 'Pending'}

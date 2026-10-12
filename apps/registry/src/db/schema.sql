@@ -47,6 +47,10 @@ CREATE TABLE IF NOT EXISTS records (
   version_no          INTEGER,
   parent_leaf         TEXT,
   creator_pub         TEXT,
+  registered_by_id    TEXT,
+  registered_by_name  TEXT,
+  registered_by_email TEXT,
+  registered_by_role  TEXT,
   created_at          TEXT NOT NULL,
   UNIQUE (leaf_hash),
   UNIQUE (batch_id, leaf_index)
@@ -56,6 +60,19 @@ CREATE INDEX IF NOT EXISTS idx_records_batch ON records(batch_id);
 CREATE INDEX IF NOT EXISTS idx_records_content ON records(content_hash);
 CREATE INDEX IF NOT EXISTS idx_records_work ON records(work_id, version_no);
 CREATE INDEX IF NOT EXISTS idx_records_creator ON records(creator_pub);
+CREATE INDEX IF NOT EXISTS idx_records_registered_by ON records(registered_by_id);
+
+CREATE TABLE IF NOT EXISTS users (
+  id                  TEXT PRIMARY KEY,
+  username            TEXT NOT NULL UNIQUE,
+  email               TEXT NOT NULL UNIQUE,
+  name                TEXT NOT NULL,
+  password_hash       TEXT NOT NULL,
+  role                TEXT NOT NULL DEFAULT 'issuer' CHECK (role IN ('issuer', 'creator', 'auditor')),
+  organization        TEXT,
+  creator_pub         TEXT,
+  created_at          TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS creators (
   public_key          TEXT PRIMARY KEY,

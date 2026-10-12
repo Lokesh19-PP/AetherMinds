@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Upload, CheckCircle2, ArrowRight, Layers, AlertCircle, FileText, Eye, Download, ShieldCheck, Sparkles, RefreshCw } from 'lucide-react';
 import { api, RecordResponse } from '../../lib/api';
 import { hashFile } from '../../lib/fileHash';
+import { useAuth } from '../../context/AuthContext';
 import '../../styles/pc-reg.css';
 
 interface QueuedFile {
@@ -66,10 +67,20 @@ export const Register: React.FC = () => {
     setExtracting(false);
   };
 
+  const { currentUser } = useAuth();
+
   const handleRegister = async () => {
     if (queuedFiles.length === 0) return;
     setSubmitting(true);
     setError(null);
+
+    const registrantName = currentUser?.name || 'Institutional Registration Officer';
+    const registrantInfo = currentUser ? {
+      id: currentUser.id,
+      name: currentUser.name,
+      email: currentUser.email,
+      role: currentUser.role,
+    } : undefined;
 
     const results: RecordResponse[] = [];
     try {
@@ -81,11 +92,15 @@ export const Register: React.FC = () => {
           mime: item.file.type || 'application/octet-stream',
           size: item.file.size,
           contentHash: item.contentHash,
-          confirmedBy: 'Admin / Registration Officer',
+          confirmedBy: registrantName,
+          registeredBy: registrantInfo,
           storeCopy: true,
           metadata: {
             category: item.category,
             confidence: item.confidence,
+            registeredBy: registrantName,
+            registrantEmail: currentUser?.email,
+            organization: currentUser?.organization,
             registeredVia: 'ProofChain Institutional Web Portal',
           },
         });
@@ -149,6 +164,32 @@ export const Register: React.FC = () => {
           Upload any certificate, credential, or document to create an immutable cryptographic timestamp on the ledger.
         </p>
       </div>
+
+      {/* Active Logged-in Registrant Banner */}
+      {currentUser && (
+        <div className="p-4 rounded-2xl bg-white border border-blue-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+              {currentUser.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+            </div>
+            <div>
+              <div className="font-bold text-slate-900 flex items-center gap-2">
+                <span>Certifying as: {currentUser.name}</span>
+                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">
+                  {currentUser.role}
+                </span>
+              </div>
+              <div className="text-slate-500 font-mono text-[11px]">
+                {currentUser.email} {currentUser.organization ? `• ${currentUser.organization}` : ''}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl font-medium text-[11px]">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Identity Bound to Merkle Leaf</span>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-mono flex items-center gap-2">

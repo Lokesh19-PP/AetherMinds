@@ -1,6 +1,7 @@
 import React from 'react';
 import { CheckCircle2, XCircle, Info, ShieldCheck } from 'lucide-react';
 import type { VerifyResult } from '@proofchain/core';
+import { formatThreeLine } from '@proofchain/verifier';
 
 export interface ThreeLineResultProps {
   result: VerifyResult;
@@ -19,14 +20,11 @@ export const ThreeLineResult: React.FC<ThreeLineResultProps> = ({
   creatorPub,
   isManifest = false,
 }) => {
-  const isOk = result.verdict === 'VALID' || (result as any).ok === true;
-  const hasIntegrity = isOk || (!['DOC_MODIFIED', 'LEAF_MISMATCH', 'ROOT_MISMATCH'].includes(result.code));
-  const hasRegistration = isOk || (!['ANCHOR_INVALID', 'ANCHOR_DISAGREEMENT', 'WITNESS_MISMATCH', 'NOT_ANCHORED'].includes(result.code));
-  const hasAttribution = Boolean(result.attribution?.signatureValid || (result as any).attribution?.signatureValid);
-
-  const displayTime = timestamp
-    ? new Date(timestamp).toUTCString()
-    : '2026-01-01 00:00 UTC';
+  const three = formatThreeLine(result);
+  const isOk = result.verdict === 'VALID';
+  const hasIntegrity = three.integrity.status === 'pass';
+  const hasRegistration = three.registration.status === 'pass';
+  const hasAttribution = three.attribution.status !== 'fail';
 
   return (
     <div className="w-full rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm font-mono text-xs">
@@ -68,9 +66,7 @@ export const ThreeLineResult: React.FC<ThreeLineResultProps> = ({
                 1. Content Integrity
               </div>
               <div className="text-[11px] text-slate-600 mt-0.5">
-                {hasIntegrity
-                  ? 'Matches the registered record. Zero bit rot or unauthorized alterations.'
-                  : `Document bytes modified or proof corrupted (Code: ${result.code}).`}
+                {three.integrity.text}
               </div>
             </div>
           </div>
@@ -98,9 +94,7 @@ export const ThreeLineResult: React.FC<ThreeLineResultProps> = ({
                 2. Priority of Registration
               </div>
               <div className="text-[11px] text-slate-600 mt-0.5">
-                {hasRegistration
-                  ? `Batch ${batchId} · Anchor Entry #${anchorSeq} · Anchored ${displayTime} (anchor-asserted time).`
-                  : 'Root mismatch or anchor ledger entry could not be authenticated.'}
+                {three.registration.text}
               </div>
             </div>
           </div>
@@ -111,11 +105,7 @@ export const ThreeLineResult: React.FC<ThreeLineResultProps> = ({
 
         {/* LINE 3: ATTRIBUTION EVIDENCE (NEVER GREEN! Uses Blue / Info) */}
         <div
-          className={`p-3.5 rounded-xl border flex items-start justify-between gap-3 ${
-            isManifest && hasAttribution
-              ? 'bg-blue-50/80 border-blue-200 text-blue-950'
-              : 'bg-slate-50 border-slate-200 text-slate-700'
-          }`}
+          className="p-3.5 rounded-xl border flex items-start justify-between gap-3 bg-blue-50/80 border-blue-200 text-blue-950"
         >
           <div className="flex items-start gap-2.5">
             <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
@@ -124,14 +114,12 @@ export const ThreeLineResult: React.FC<ThreeLineResultProps> = ({
                 3. Attribution Evidence (Never Green)
               </div>
               <div className="text-[11px] leading-relaxed text-slate-600 mt-0.5">
-                {isManifest && hasAttribution
-                  ? `Signed by key ${creatorPub ? `${creatorPub.slice(0, 14)}...` : '03a1...31b8'} (signature valid). The key holder's biological identity is not verified.`
-                  : 'No creator signature in this record. Authorship is not established.'}
+                {three.attribution.text}
               </div>
             </div>
           </div>
           <span className="font-bold uppercase text-[11px] text-blue-700">
-            {isManifest ? 'EVIDENCE' : 'UNCLAIMED'}
+            {three.attribution.status === 'info' ? 'EVIDENCE' : 'UNCLAIMED'}
           </span>
         </div>
       </div>

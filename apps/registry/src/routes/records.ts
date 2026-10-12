@@ -17,13 +17,18 @@ export function createRecordsRouter(db: DatabaseSync, fileStore: FileStore): exp
     const hash = (req.query.hash || req.query.contentHash || req.query.leafHash) as string;
     if (hash) {
       const records = db.prepare(`
-        SELECT id, batch_id, leaf_index, leaf_hash, content_hash, kind, title, file_name, mime, size, storage_mode, confirmed_by, confirmed_at, created_at 
+        SELECT id, batch_id, leaf_index, leaf_hash, content_hash, kind, title, file_name, mime, size, storage_mode, confirmed_by, confirmed_at, registered_by_id, registered_by_name, registered_by_email, registered_by_role, created_at 
         FROM records 
         WHERE content_hash = ? OR leaf_hash = ? OR id = ?
       `).all(hash, hash, hash);
       return res.json(records);
     }
-    const records = db.prepare('SELECT id, batch_id, leaf_index, leaf_hash, content_hash, kind, title, storage_mode, created_at FROM records ORDER BY created_at DESC LIMIT 50').all();
+    const records = db.prepare(`
+      SELECT id, batch_id, leaf_index, leaf_hash, content_hash, kind, title, storage_mode, confirmed_by, registered_by_id, registered_by_name, registered_by_email, registered_by_role, created_at 
+      FROM records 
+      ORDER BY created_at DESC 
+      LIMIT 50
+    `).all();
     return res.json(records);
   });
 
@@ -144,7 +149,14 @@ export function createRecordsRouter(db: DatabaseSync, fileStore: FileStore): exp
         }
       }
 
-      // 6. Insert record into open batch
+      // 6. Resolve registrant user identity
+      const regUser = req.body?.registeredBy;
+      const registeredById = regUser?.id || (req.headers['x-user-id'] as string) || null;
+      const registeredByName = regUser?.name || (req.headers['x-user-name'] as string) || confirmedBy || 'Authorized Officer';
+      const registeredByEmail = regUser?.email || (req.headers['x-user-email'] as string) || null;
+      const registeredByRole = regUser?.role || (req.headers['x-user-role'] as string) || 'issuer';
+
+      // 7. Insert record into open batch
       const recordId = crypto.randomUUID();
       const createdAt = new Date().toISOString();
       const metadataStr = typeof metadata === 'string' ? metadata : JSON.stringify(metadata);
@@ -153,8 +165,10 @@ export function createRecordsRouter(db: DatabaseSync, fileStore: FileStore): exp
         INSERT INTO records (
           id, batch_id, content_hash, leaf_hash, kind, title,
           file_name, mime, size, storage_mode, file_ref, store_name,
-          metadata_json, confirmed_by, confirmed_at, created_at
-        ) VALUES (?, ?, ?, ?, 'file', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          metadata_json, confirmed_by, confirmed_at,
+          registered_by_id, registered_by_name, registered_by_email, registered_by_role,
+          created_at
+        ) VALUES (?, ?, ?, ?, 'file', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         recordId,
         openBatch.id,
@@ -170,6 +184,10 @@ export function createRecordsRouter(db: DatabaseSync, fileStore: FileStore): exp
         metadataStr,
         confirmedBy,
         createdAt,
+        registeredById,
+        registeredByName,
+        registeredByEmail,
+        registeredByRole,
         createdAt
       );
 
@@ -218,7 +236,7 @@ export function createRecordsRouter(db: DatabaseSync, fileStore: FileStore): exp
       anchoredAt: batch?.anchored_at || batch?.sealed_at || record.created_at,
       anchor_seq: batch?.anchor_seq || 1,
       ethTxHash: batch?.ethereum_tx_hash || batch?.eth_tx_hash || null,
-      ethChainId: batch?.eth_chain_id || 80002,
+      ethChainId: batch?.eth_chain_id || 31337,
       batchRoot: batch?.root || null,
     });
   });
@@ -243,6 +261,120 @@ export function createRecordsRouter(db: DatabaseSync, fileStore: FileStore): exp
         error: { code: 'PROOF_ERROR', message: err.message },
       });
     }
+  });
+
+  // POST /api/records/:id/preview (Section 8.1 & 19.4)
+  router.post('/:id/preview', async (req: Request, res: Response) => {
+    const record = db.prepare('SELECT * FROM records WHERE id = ?').get(req.params.id) as any;
+    if (!record) {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Record not found' } });
+    }
+
+    let previewBytes: Uint8Array | null = null;
+    if (req.body?.previewBase64) {
+      previewBytes = new Uint8Array(Buffer.from(req.body.previewBase64, 'base64'));
+    } else if (Buffer.isBuffer(req.body)) {
+      previewBytes = new Uint8Array(req.body);
+    }
+
+    if (!previewBytes || previewBytes.length === 0) {
+      return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Preview image data is required' } });
+    }
+
+    const MAX_PREVIEW_BYTES = 1024 * 1024; // 1 MB limit
+    if (previewBytes.length > MAX_PREVIEW_BYTES) {
+      return res.status(413).json({ error: { code: 'PREVIEW_TOO_LARGE', message: 'Preview exceeds maximum allowed size' } });
+    }
+
+    // Auth check: Side 2 creator signature or Side 1 issuer auth
+    const xSignature = req.headers['x-signature'] as string | undefined;
+    const authHeader = req.headers.authorization;
+    let authorized = false;
+
+    if (record.creator_pub && xSignature) {
+      try {
+        const previewHash = sha256Hex(previewBytes);
+        const signMsg = new TextEncoder().encode(`preview:${record.id}:${previewHash}`);
+        const { ed25519 } = await import('@noble/curves/ed25519');
+        authorized = ed25519.verify(hexToBytes(xSignature), signMsg, hexToBytes(record.creator_pub));
+      } catch {
+        authorized = false;
+      }
+      if (!authorized) {
+        return res.status(422).json({ error: { code: 'SIGNATURE_INVALID', message: 'Invalid creator preview signature' } });
+      }
+    } else {
+      const expectedToken = process.env.REGISTRY_API_TOKEN;
+      if (expectedToken && authHeader === `Bearer ${expectedToken}`) {
+        authorized = true;
+      } else if (!expectedToken) {
+        authorized = true;
+      }
+      if (!authorized) {
+        return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Issuer token or creator signature required' } });
+      }
+    }
+
+    const previewSha = sha256Hex(previewBytes);
+    const putRes = await fileStore.put({
+      bytes: previewBytes,
+      sha256: previewSha,
+      mime: 'image/jpeg',
+      kind: 'preview',
+    });
+
+    const newStorageMode = record.storage_mode === 'copy' ? 'copy' : 'preview';
+    db.prepare('UPDATE records SET preview_ref = ?, preview_sha256 = ?, storage_mode = ? WHERE id = ?').run(
+      putRes.ref,
+      previewSha,
+      newStorageMode,
+      record.id
+    );
+
+    return res.status(201).json({
+      previewUrl: `/api/records/${record.id}/preview`,
+      previewSha256: previewSha,
+    });
+  });
+
+  // GET /api/records/:id/preview
+  router.get('/:id/preview', async (req: Request, res: Response) => {
+    const record = db.prepare('SELECT id, preview_ref, preview_sha256, visibility FROM records WHERE id = ?').get(req.params.id) as any;
+    if (!record || !record.preview_ref) {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'No preview available for this record' } });
+    }
+
+    try {
+      const result = await fileStore.get(record.preview_ref, 'preview');
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('X-Not-Registered-File', 'true');
+      if (record.preview_sha256) {
+        res.setHeader('X-Content-SHA256', record.preview_sha256);
+      }
+      return res.send(Buffer.from(result.bytes));
+    } catch {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Preview file not found in storage' } });
+    }
+  });
+
+  // DELETE /api/records/:id/preview
+  router.delete('/:id/preview', async (req: Request, res: Response) => {
+    const record = db.prepare('SELECT id, preview_ref, storage_mode, creator_pub FROM records WHERE id = ?').get(req.params.id) as any;
+    if (!record) {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Record not found' } });
+    }
+
+    if (record.preview_ref) {
+      try {
+        await fileStore.remove(record.preview_ref, 'preview');
+      } catch (err: any) {
+        console.warn(`[FileStore] Remove preview error: ${err.message}`);
+      }
+    }
+
+    const newStorageMode = record.storage_mode === 'copy' ? 'copy' : 'none';
+    db.prepare("UPDATE records SET preview_ref = NULL, preview_sha256 = NULL, storage_mode = ? WHERE id = ?").run(newStorageMode, record.id);
+    return res.status(204).send();
   });
 
   // DELETE /api/records/:id/file

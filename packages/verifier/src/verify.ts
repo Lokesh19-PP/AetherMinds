@@ -151,6 +151,31 @@ export async function verifyBundle(input: {
         continue;
       }
 
+      // Chain linkage check
+      if (entry.seq === 0) {
+        if (entry.prevHash !== '00'.repeat(32)) {
+          steps.push({ id: stepAuthId, label: 'Authenticate ledger entry', status: 'fail', detail: 'Genesis entry prevHash must be 64 zeros' });
+          hasAnchorFailure = true;
+          failingCode = failingCode || 'ANCHOR_INVALID';
+          continue;
+        }
+      } else if (entry.seq > 0) {
+        try {
+          const prevEntry = await readers.ledger.getEntry(entry.seq - 1);
+          if (prevEntry) {
+            const prevSigOk = verifyEntrySignature(prevEntry, input.pinned.ledgerPublicKey);
+            if (!prevSigOk || entry.prevHash !== prevEntry.entryHash) {
+              steps.push({ id: stepAuthId, label: 'Authenticate ledger entry', status: 'fail', detail: 'Ledger prevHash chain link broken or invalid signature on prev entry' });
+              hasAnchorFailure = true;
+              failingCode = failingCode || 'ANCHOR_INVALID';
+              continue;
+            }
+          }
+        } catch {
+          // If previous entry lookup fails due to partial offline entry list, keep going
+        }
+      }
+
       if (entry.batchId !== bundle.batchId || entry.leafCount !== bundle.leafCount) {
         steps.push({ id: stepAuthId, label: 'Authenticate ledger entry', status: 'fail', detail: 'Batch ID or leaf count mismatch' });
         hasAnchorFailure = true;
@@ -232,6 +257,21 @@ export async function verifyBundle(input: {
       reachableAnchorCount++;
 
       // S5 Auth
+      if (input.pinned.ethereum) {
+        if (anchorRef.chainId && anchorRef.chainId !== input.pinned.ethereum.chainId) {
+          steps.push({ id: stepAuthId, label: 'Authenticate Ethereum anchor', status: 'fail', detail: `Chain ID ${anchorRef.chainId} does not match pinned chain ${input.pinned.ethereum.chainId}` });
+          hasAnchorFailure = true;
+          failingCode = failingCode || 'ANCHOR_INVALID';
+          continue;
+        }
+        if (anchorRef.contract && input.pinned.ethereum.contract && anchorRef.contract.toLowerCase() !== input.pinned.ethereum.contract.toLowerCase()) {
+          steps.push({ id: stepAuthId, label: 'Authenticate Ethereum anchor', status: 'fail', detail: `Contract address ${anchorRef.contract} does not match pinned contract ${input.pinned.ethereum.contract}` });
+          hasAnchorFailure = true;
+          failingCode = failingCode || 'ANCHOR_INVALID';
+          continue;
+        }
+      }
+
       const expectedBatchKey = bytesToHex(keccak_256(utf8ToBytes(bundle.batchId)));
       if (chainAnchor.batchKey.toLowerCase() !== expectedBatchKey.toLowerCase()) {
         steps.push({ id: stepAuthId, label: 'Authenticate Ethereum anchor', status: 'fail', detail: 'batchKey does not match keccak256(batchId)' });

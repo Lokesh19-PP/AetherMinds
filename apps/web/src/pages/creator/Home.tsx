@@ -33,6 +33,7 @@ import {
   Filter,
   UserCheck
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { api, RecordItem } from '../../lib/api';
 import { getOrCreateCreatorKey, getKeyFingerprint } from '../../lib/creatorKey';
 import { sha256Hex, signManifest as coreSignManifest } from '@proofchain/core';
@@ -65,6 +66,12 @@ interface SocialWorkPost {
 
 export const CreatorHome: React.FC = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const activeCreatorName = currentUser?.name || 'Creator';
+  const activeCreatorHandle = currentUser?.username
+    ? `@${currentUser.username}`
+    : `@${activeCreatorName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+
   const [keyPair] = useState(() => getOrCreateCreatorKey());
   const keyFingerprint = getKeyFingerprint(keyPair.publicKey);
 
@@ -151,8 +158,8 @@ export const CreatorHome: React.FC = () => {
             id: `post-${item.work_id || item.latest_record_id || idx}`,
             recordId: item.latest_record_id,
             workId: item.work_id,
-            creatorName: item.creator_name || item.confirmed_by || 'Shreyash Dubewar',
-            creatorHandle: item.creator_handle || ('@' + (item.creator_name || item.confirmed_by || 'shreyash').toLowerCase().replace(/[^a-z0-9]/g, '')),
+            creatorName: item.creator_name || item.confirmed_by || activeCreatorName,
+            creatorHandle: item.creator_handle || ('@' + (item.creator_name || item.confirmed_by || currentUser?.username || 'creator').toLowerCase().replace(/[^a-z0-9]/g, '')),
             title: item.title || item.file_name || 'Creative Work',
             caption: item.description || 'Verified on immutable ledger and blockchain.',
             category,
@@ -166,7 +173,7 @@ export const CreatorHome: React.FC = () => {
             commentsCount: idx % 3,
             views: 45 + idx * 19,
             txHash,
-            network: 'Polygon Amoy Testnet',
+            network: 'Local Hardhat (31337)',
             creatorPub: item.creator_pub || keyPair.publicKey,
           };
         });
@@ -229,7 +236,10 @@ export const CreatorHome: React.FC = () => {
     if (activeTab === 'portfolio') {
       const matchesKey =
         p.creatorPub === keyPair.publicKey ||
-        p.creatorName.toLowerCase().includes('shreyash');
+        (currentUser && (
+          p.creatorName.toLowerCase() === currentUser.name.toLowerCase() ||
+          p.creatorHandle.toLowerCase() === activeCreatorHandle.toLowerCase()
+        ));
       if (!matchesKey) return false;
     }
     if (selectedCategory !== 'all' && p.category.toLowerCase() !== selectedCategory.toLowerCase()) {
@@ -250,12 +260,19 @@ export const CreatorHome: React.FC = () => {
   const [newFile, setNewFile] = useState<File | null>(null);
   const [newTitle, setNewTitle] = useState<string>('');
   const [newCaption, setNewCaption] = useState<string>('');
-  const [newCreatorName, setNewCreatorName] = useState<string>('Shreyash Dubewar');
-  const [newCreatorHandle, setNewCreatorHandle] = useState<string>('@Shreyash08');
+  const [newCreatorName, setNewCreatorName] = useState<string>(activeCreatorName);
+  const [newCreatorHandle, setNewCreatorHandle] = useState<string>(activeCreatorHandle);
   const [newCategory, setNewCategory] = useState<'Image' | 'Video' | 'Audio' | 'Document'>('Image');
   const [newLicense, setNewLicense] = useState<string>('creativeCommons');
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
   const [creating, setCreating] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (currentUser?.name) {
+      setNewCreatorName(currentUser.name);
+      setNewCreatorHandle(currentUser.username ? `@${currentUser.username}` : `@${currentUser.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`);
+    }
+  }, [currentUser]);
 
   // Handle file selected in creation modal
   const handleNewFileSelected = (file: File) => {
@@ -413,10 +430,10 @@ export const CreatorHome: React.FC = () => {
 
       setShowClaimModal(false);
       const cleanName = record.title || record.file_name || (record.id ? `${record.id.slice(0, 12)}...` : 'Document');
-      showToast(`Ownership of "${cleanName}" claimed & anchored on Polygon Amoy!`);
+      showToast(`Manifest for "${cleanName}" registered and queued for batch sealing!`);
       await loadFeed();
     } catch (err: any) {
-      showToast(`Error claiming ownership: ${err.message}`);
+      showToast(`Error registering manifest: ${err.message}`);
     } finally {
       setCreating(false);
     }
@@ -434,27 +451,8 @@ export const CreatorHome: React.FC = () => {
       a.click();
       URL.revokeObjectURL(url);
       showToast('Downloaded .pcproof.json proof package!');
-    } catch {
-      const dummyProof = {
-        format: 'proofchain/proof/1',
-        recordId: post.recordId,
-        workId: post.workId,
-        batchId: post.batchId,
-        contentHash: post.sha256Hash,
-        creator: post.creatorName,
-        creatorPub: post.creatorPub,
-        network: post.network,
-        txHash: post.txHash,
-        timestamp: post.createdAt,
-      };
-      const blob = new Blob([JSON.stringify(dummyProof, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${post.title.replace(/\s+/g, '_')}.pcproof.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('Downloaded .pcproof.json bundle!');
+    } catch (err: any) {
+      showToast('Proof bundle not available yet: batch is pending or sealing.');
     }
   };
 
@@ -499,13 +497,13 @@ export const CreatorHome: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 text-cyan-600 font-bold text-xs uppercase tracking-wider">
                 <ShieldCheck className="w-4 h-4 text-cyan-600" />
-                Decentralized Authorship & Creator Protection
+                Decentralized Attribution & Priority Evidence
               </div>
               <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
                 CreatorProof Studio
               </h1>
               <p className="text-slate-600 text-sm mt-1 max-w-2xl">
-                Publish artwork, video, audio, and documents with immutable cryptographic proof of priority anchored to Polygon Amoy Testnet & the append-only ledger.
+                Register creative works with verifiable cryptographic priority and attribution evidence anchored to the append-only ledger and Ethereum EVM contract.
               </p>
             </div>
 
@@ -514,14 +512,14 @@ export const CreatorHome: React.FC = () => {
                 onClick={openClaimModal}
                 className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
               >
-                <Award className="w-4 h-4 text-cyan-600" /> Claim Document Ownership
+                <Award className="w-4 h-4 text-cyan-600" /> Register Manifest from File
               </button>
 
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-semibold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
               >
-                <Plus className="w-4 h-4" /> Post New Creation
+                <Plus className="w-4 h-4" /> Register New Creation
               </button>
             </div>
           </div>
@@ -575,14 +573,14 @@ export const CreatorHome: React.FC = () => {
             <div className="rounded-3xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white font-extrabold flex items-center justify-center text-lg shadow-sm">
-                  S
+                  {activeCreatorName[0]?.toUpperCase() || 'C'}
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-base flex items-center gap-1.5">
-                    Shreyash Dubewar
+                    {activeCreatorName}
                     <span className="w-2 h-2 rounded-full bg-emerald-500" title="Active Key" />
                   </h3>
-                  <p className="text-xs text-slate-500 font-sans">@Shreyash08</p>
+                  <p className="text-xs text-slate-500 font-sans">{activeCreatorHandle}</p>
                 </div>
               </div>
 
@@ -643,7 +641,7 @@ export const CreatorHome: React.FC = () => {
                   My Owned Portfolio
                 </span>
                 <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-white text-slate-600 border border-slate-200">
-                  {posts.filter((p) => p.creatorPub === keyPair.publicKey || p.creatorName.toLowerCase().includes('shreyash')).length}
+                  {posts.filter((p) => p.creatorPub === keyPair.publicKey || (currentUser && p.creatorName.toLowerCase() === currentUser.name.toLowerCase())).length}
                 </span>
               </button>
 

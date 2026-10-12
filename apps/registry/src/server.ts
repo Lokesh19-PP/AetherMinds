@@ -15,6 +15,7 @@ import { createManifestsRouter } from './routes/manifests.js';
 import { createWorksRouter } from './routes/works.js';
 import { createClaimsRouter } from './routes/claims.js';
 import { createAiRouter } from './routes/ai.js';
+import { createAuthRouter } from './routes/auth.js';
 
 import fs from 'node:fs';
 
@@ -46,7 +47,19 @@ export function createRegistryApp(options?: {
 
   app.use(
     cors({
-      origin: [webOrigin, 'http://localhost:5173'],
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (
+          webOrigin === '*' ||
+          origin === webOrigin ||
+          origin.includes('localhost') ||
+          origin.includes('127.0.0.1') ||
+          origin.endsWith('.vercel.app')
+        ) {
+          return callback(null, true);
+        }
+        return callback(null, true);
+      },
       credentials: true,
     })
   );
@@ -54,12 +67,49 @@ export function createRegistryApp(options?: {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+  // Forwarding for Anchor & Witness (allows single public backend domain on Render)
+  const anchorTargetUrl = process.env.ANCHOR_URL || 'http://localhost:4100';
+  const witnessTargetUrl = process.env.WITNESS_URL || 'http://localhost:4200';
+
+  app.use('/api/anchor', async (req, res) => {
+    try {
+      const url = `${anchorTargetUrl.replace(/\/+$/, '')}${req.url}`;
+      const response = await fetch(url, {
+        method: req.method,
+        headers: { 'Content-Type': req.headers['content-type'] || 'application/json' },
+        body: ['GET', 'HEAD'].includes(req.method) ? undefined : JSON.stringify(req.body),
+      });
+      res.status(response.status);
+      const text = await response.text();
+      res.send(text);
+    } catch (err: any) {
+      res.status(502).json({ error: { code: 'ANCHOR_UNREACHABLE', message: err.message } });
+    }
+  });
+
+  app.use('/api/witness', async (req, res) => {
+    try {
+      const url = `${witnessTargetUrl.replace(/\/+$/, '')}${req.url}`;
+      const response = await fetch(url, {
+        method: req.method,
+        headers: { 'Content-Type': req.headers['content-type'] || 'application/json' },
+        body: ['GET', 'HEAD'].includes(req.method) ? undefined : JSON.stringify(req.body),
+      });
+      res.status(response.status);
+      const text = await response.text();
+      res.send(text);
+    } catch (err: any) {
+      res.status(502).json({ error: { code: 'WITNESS_UNREACHABLE', message: err.message } });
+    }
+  });
+
   // Protected test route for verifying auth middleware
   app.get('/api/protected-check', requireIssuerAuth, (_req, res) => {
     res.json({ ok: true, message: 'Authorized issuer' });
   });
 
   // Mount API routers
+  app.use('/api/auth', createAuthRouter(db));
   app.use('/api/health', createHealthRouter(db, fileStore));
   app.use('/api/records', createRecordsRouter(db, fileStore));
   app.use('/api/batches', createBatchesRouter(db));
@@ -67,8 +117,9 @@ export function createRegistryApp(options?: {
   app.use('/api/manifests', createManifestsRouter(() => db as any, () => fileStore));
   app.use('/api/works', createWorksRouter(() => db as any));
   app.use('/api/claims', createClaimsRouter(() => db as any));
-  app.use('/api/ai', createAiRouter());
-  app.use('/api/extract', createAiRouter());
+  const aiRouter = createAiRouter();
+  app.use('/api', aiRouter); // exposes POST /api/extract and POST /api/explain
+  app.use('/api/ai', aiRouter); // alias support
 
   // Mount Tamper Lab demo endpoints
   if (process.env.DEMO_MODE === 'true' || process.env.NODE_ENV === 'test') {
@@ -79,7 +130,7 @@ export function createRegistryApp(options?: {
 }
 
 export function startServer(): void {
-  const port = parseInt(process.env.REGISTRY_PORT || '4000', 10);
+  const port = parseInt(process.env.PORT || process.env.REGISTRY_PORT || '4000', 10);
   try {
     const { app, fileStore } = createRegistryApp();
     app.listen(port, () => {

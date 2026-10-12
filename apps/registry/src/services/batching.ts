@@ -52,6 +52,10 @@ export async function sealAndPublishBatch(
     throw new Error(`Batch ${batchId || 'open'} not found`);
   }
 
+  if (targetBatch.status === 'anchored') {
+    throw new Error(`Batch ${targetBatch.id} is already anchored`);
+  }
+
   // 1. Fetch records in order
   const records = db
     .prepare('SELECT id, leaf_hash FROM records WHERE batch_id = ? ORDER BY created_at ASC, id ASC')
@@ -63,11 +67,13 @@ export async function sealAndPublishBatch(
     throw err;
   }
 
-  // 2. Mark batch as sealed
-  db.prepare("UPDATE batches SET status = 'sealed', sealed_at = ? WHERE id = ?").run(
-    new Date().toISOString(),
-    targetBatch.id
-  );
+  // 2. Mark batch as sealed if still open
+  if (targetBatch.status !== 'sealed') {
+    db.prepare("UPDATE batches SET status = 'sealed', sealed_at = ? WHERE id = ?").run(
+      new Date().toISOString(),
+      targetBatch.id
+    );
+  }
 
   // 3. Assign leaf_index
   for (let idx = 0; idx < records.length; idx++) {
@@ -100,6 +106,9 @@ export async function sealAndPublishBatch(
       });
     } catch (err: any) {
       console.warn(`[SealBatch] Ethereum anchoring skipped or failed: ${err.message}`);
+      if (anchorMode === 'ethereum') {
+        throw err;
+      }
     }
   }
 

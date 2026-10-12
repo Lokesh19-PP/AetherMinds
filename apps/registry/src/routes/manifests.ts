@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { verifyManifest, hashManifest, canonicalJson, CreatorManifest } from '@proofchain/core';
+import { verifyManifest, manifestLeafHash, canonicalJson, CreatorManifest } from '@proofchain/core';
 import { getDatabase, RegistryDB } from '../db';
 import { FileStore } from '../storage/FileStore.js';
 import crypto from 'node:crypto';
@@ -16,7 +16,7 @@ export function createManifestsRouter(
    * Side 2 CreatorProof registration:
    * - Does NOT require issuer token because it is authenticated by the creator's Ed25519 signature!
    * - Verifies manifest signature using @proofchain/core (verifyManifest).
-   * - Inserts record with kind = 'manifest', leaf_hash = hash(canonicalJson(manifest)).
+   * - Inserts record with kind = 'manifest', leaf_hash = manifestLeafHash(manifest).
    * - Returns record ID and pending status.
    */
   router.post('/', async (req: Request, res: Response) => {
@@ -74,9 +74,8 @@ export function createManifestsRouter(
         });
       }
 
-      // Compute leaf_hash = hash(canonicalJson(manifest))
-      const canonical = canonicalJson(manifest);
-      const leafHash = hashManifest(manifest);
+      // Compute leaf_hash = manifestLeafHash(manifest) with 0x00 domain separator
+      const leafHash = manifestLeafHash(manifest);
 
       // Check duplicate
       const existing = db
@@ -171,17 +170,27 @@ export function createManifestsRouter(
         }
       }
 
+      const regUser = req.body?.registeredBy;
+      const registeredById = regUser?.id || (req.headers['x-user-id'] as string) || null;
+      const registeredByName = regUser?.name || (req.headers['x-user-name'] as string) || manifest.creator?.displayName || confirmedBy || 'Creator';
+      const registeredByEmail = regUser?.email || (req.headers['x-user-email'] as string) || null;
+      const registeredByRole = regUser?.role || (req.headers['x-user-role'] as string) || 'creator';
+
       db.prepare(`
         INSERT INTO records (
           id, batch_id, kind, leaf_hash, content_hash, title, file_name, mime, size,
           storage_mode, file_ref, store_name,
           metadata_json, confirmed_by, confirmed_at, manifest_json,
-          work_id, version_no, parent_leaf, creator_pub, sim_kind, sim_value, created_at
+          work_id, version_no, parent_leaf, creator_pub, sim_kind, sim_value,
+          registered_by_id, registered_by_name, registered_by_email, registered_by_role,
+          created_at
         ) VALUES (
           ?, ?, 'manifest', ?, ?, ?, ?, ?, ?,
           ?, ?, ?,
           ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?
+          ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?,
+          ?
         )
       `).run(
         recordId,
@@ -198,13 +207,17 @@ export function createManifestsRouter(
         JSON.stringify(metadata),
         confirmedBy,
         now,
-        canonical,
+        canonicalJson(manifest),
         manifest.workId,
         manifest.version || 1,
         manifest.parentLeaf || null,
         manifest.creator.publicKey,
         simKind,
         simValue,
+        registeredById,
+        registeredByName,
+        registeredByEmail,
+        registeredByRole,
         now
       );
 

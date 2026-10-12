@@ -7,10 +7,12 @@ import { api, ClaimItem } from '../../lib/api';
 import { getOrCreateCreatorKey, signManifest, getKeyFingerprint } from '../../lib/creatorKey';
 import { ClaimsPanel } from '../../components/ClaimsPanel';
 import { HashProgress } from '../../components/HashProgress';
+import { useAuth } from '../../context/AuthContext';
 import type { CreatorManifest } from '@proofchain/core';
 
 export const NewWork: React.FC = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [step, setStep] = useState<number>(1);
 
   // Step 1: File & Hash
@@ -29,7 +31,7 @@ export const NewWork: React.FC = () => {
   const [tags, setTags] = useState<string>('');
 
   // Step 3: License
-  const [license, setLicense] = useState<string>('CC-BY-4.0');
+  const [license, setLicense] = useState<string>('CC_BY');
   const [customLicense, setCustomLicense] = useState<string>('');
 
   // Step 4: Versioning
@@ -109,6 +111,7 @@ export const NewWork: React.FC = () => {
         licenseText: license === 'CUSTOM' ? customLicense : null,
         creator: {
           publicKey: keyPair.publicKey,
+          displayName: currentUser?.name || 'Independent Creator',
         },
         creatorPub: keyPair.publicKey,
         createdAtClaimed: new Date().toISOString(),
@@ -138,7 +141,13 @@ export const NewWork: React.FC = () => {
       const res = await api.submitManifest({
         manifest: signedManifest,
         similarity: dHash ? { kind: 'image', value: dHash } : undefined,
-        confirmedBy: 'creator',
+        confirmedBy: currentUser?.name || 'creator',
+        registeredBy: currentUser ? {
+          id: currentUser.id,
+          name: currentUser.name,
+          email: currentUser.email,
+          role: currentUser.role,
+        } : undefined,
       });
 
       setSubmittedRecordId(res.recordId);
@@ -351,11 +360,11 @@ export const NewWork: React.FC = () => {
 
           <div className="space-y-3">
             {[
-              { id: 'CC-BY-4.0', name: 'Creative Commons Attribution 4.0 (CC-BY-4.0)', desc: 'Allows sharing and adaptation with credit.' },
-              { id: 'CC-BY-NC-4.0', name: 'Non-Commercial 4.0 (CC-BY-NC-4.0)', desc: 'Allows non-commercial adaptation with credit.' },
-              { id: 'MIT', name: 'MIT Open Source License', desc: 'Permissive license with limitation of liability.' },
-              { id: 'ALL-RIGHTS-RESERVED', name: 'All Rights Reserved', desc: 'Full copyright protection under local laws.' },
-              { id: 'CUSTOM', name: 'Custom Terms', desc: 'Provide bespoke legal stipulations.' },
+              { id: 'CC_BY', name: 'Creative Commons Attribution (CC_BY)', desc: 'Allows sharing and adaptation with attribution.' },
+              { id: 'CC_BY_NC', name: 'Non-Commercial (CC_BY_NC)', desc: 'Allows non-commercial adaptation with attribution.' },
+              { id: 'COMMERCIAL', name: 'Commercial Rights (COMMERCIAL)', desc: 'Commercial distribution allowed under terms.' },
+              { id: 'ALL_RIGHTS_RESERVED', name: 'All Rights Reserved (ALL_RIGHTS_RESERVED)', desc: 'Full copyright protection under applicable laws.' },
+              { id: 'CUSTOM', name: 'Custom Terms (CUSTOM)', desc: 'Provide bespoke legal stipulations.' },
             ].map((lic) => (
               <label
                 key={lic.id}

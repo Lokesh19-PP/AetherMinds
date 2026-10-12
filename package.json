@@ -13,7 +13,13 @@
     "test": "vitest run",
     "test:workspaces": "npm run test --workspaces --if-present",
     "seed": "tsx scripts/seed.ts",
+    "reset": "tsx scripts/resetDemo.ts",
+    "verify": "tsx apps/verifier-cli/src/cli.ts",
+    "chain:node": "npm run chain -w @proofchain/contracts",
+    "chain:deploy": "npm run deploy -w @proofchain/contracts",
     "setup": "tsx scripts/setup.ts",
+    "start:backend": "concurrently -n anchor,witness,registry -c green,yellow,blue \"npm run dev -w @proofchain/anchor\" \"npm run dev -w @proofchain/witness\" \"npm run dev -w @proofchain/registry\"",
+    "start": "npm run start:backend",
     "demo:tamper": "tsx scripts/demoTamper.ts",
     "check:purity": "tsx scripts/checkVerifierPurity.ts"
   },

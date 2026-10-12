@@ -169,6 +169,17 @@ export function clearIssuerToken(): void {
   sessionStorage.removeItem('issuerToken');
 }
 
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  name: string;
+  role: 'issuer' | 'creator' | 'auditor';
+  organization?: string;
+  creatorPub?: string;
+  createdAt?: string;
+}
+
 /**
  * Core HTTP Request Wrapper
  */
@@ -186,7 +197,22 @@ async function request<T>(
     }
   }
 
-  const response = await fetch(path, {
+  // Attach active logged-in user headers if available
+  try {
+    const rawUser = localStorage.getItem('proofchain_current_user');
+    if (rawUser) {
+      const u = JSON.parse(rawUser);
+      if (u?.id) headers.set('x-user-id', u.id);
+      if (u?.name) headers.set('x-user-name', u.name);
+      if (u?.email) headers.set('x-user-email', u.email);
+      if (u?.role) headers.set('x-user-role', u.role);
+    }
+  } catch {}
+
+  const apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+  const fullUrl = path.startsWith('http') ? path : `${apiBase}${path}`;
+
+  const response = await fetch(fullUrl, {
     ...options,
     headers,
   });
@@ -237,6 +263,7 @@ export const api = {
     file?: File;
     metadata: Record<string, unknown>;
     confirmedBy: string;
+    registeredBy?: { id?: string; name?: string; email?: string; role?: string };
     storeCopy?: boolean;
     title?: string;
     fileName?: string;
@@ -277,6 +304,7 @@ export const api = {
       body: JSON.stringify({
         metadata: params.metadata,
         confirmedBy: params.confirmedBy,
+        registeredBy: params.registeredBy,
         title: params.title || params.fileName || params.file?.name || 'Untitled Document',
         fileName: params.fileName || params.file?.name,
         mime: params.mime || params.file?.type || 'application/octet-stream',
@@ -294,6 +322,7 @@ export const api = {
     manifest: CreatorManifest;
     similarity?: { kind: 'image' | 'text'; value: string };
     confirmedBy: string;
+    registeredBy?: { id?: string; name?: string; email?: string; role?: string };
     fileBase64?: string;
   }): Promise<RecordResponse> {
     return request<RecordResponse>('/api/manifests', {
@@ -427,5 +456,38 @@ export const api = {
     return request<{ ok: boolean }>('/api/demo/reset', {
       method: 'POST',
     });
+  },
+
+  // User Authentication
+  login(credentials: { identifier: string; password?: string }): Promise<{ ok: boolean; user: User; token: string }> {
+    return request<{ ok: boolean; user: User; token: string }>('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+    });
+  },
+
+  registerUser(data: {
+    username: string;
+    email: string;
+    name: string;
+    password?: string;
+    role?: 'issuer' | 'creator' | 'auditor';
+    organization?: string;
+    creatorPub?: string;
+  }): Promise<{ ok: boolean; user: User; token: string }> {
+    return request<{ ok: boolean; user: User; token: string }>('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  },
+
+  getDemoUsers(): Promise<{ ok: boolean; users: User[] }> {
+    return request<{ ok: boolean; users: User[] }>('/api/auth/demo-users');
+  },
+
+  getCurrentUser(): Promise<{ ok: boolean; user: User | null }> {
+    return request<{ ok: boolean; user: User | null }>('/api/auth/me');
   },
 };

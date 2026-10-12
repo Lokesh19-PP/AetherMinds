@@ -26,7 +26,7 @@ export function createBatchesRouter(db: DatabaseSync): express.Router {
     }
 
     const records = db
-      .prepare('SELECT id, leaf_index, leaf_hash, content_hash, kind, title, file_name, file_ref, mime, storage_mode, created_at FROM records WHERE batch_id = ? ORDER BY leaf_index ASC, created_at ASC')
+      .prepare('SELECT id, leaf_index, leaf_hash, content_hash, kind, title, file_name, file_ref, mime, storage_mode, confirmed_by, registered_by_name, registered_by_email, registered_by_role, created_at FROM records WHERE batch_id = ? ORDER BY leaf_index ASC, created_at ASC')
       .all(batch.id) as any[];
 
     let levels: string[][] = [];
