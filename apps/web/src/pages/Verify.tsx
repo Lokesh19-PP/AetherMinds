@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Upload, FileText, CheckCircle2, AlertCircle, RefreshCw, Cpu, Layers, WifiOff, FileCode, Eye, Download, Sparkles, XCircle, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Upload, FileText, CheckCircle2, AlertCircle, RefreshCw, Cpu, Layers, WifiOff, FileCode, Eye, Download, Sparkles, XCircle, ArrowRight, FlaskConical } from 'lucide-react';
 import { verifyBundle, HttpLedgerReader, StaticLedgerReader, EthereumReader, HttpWitnessReader } from '@proofchain/verifier';
 import { sha256Hex, leafHash as computeLeafHash } from '@proofchain/core';
 import type { VerifyResult, ProofBundle } from '@proofchain/core';
@@ -12,8 +12,8 @@ import { api, getFileUrl } from '../lib/api';
 import '../styles/pc-verify.css';
 
 export const Verify: React.FC = () => {
-  // Verification Mode: 'standalone' (document + .pcproof.json - Rule R-A) or 'registryLookup' (file hash query)
-  const [mode, setMode] = useState<'standalone' | 'registryLookup'>('standalone');
+  // Verification Mode: 'registryLookup' (file hash query) or 'standalone' (document + .pcproof.json - Rule R-A)
+  const [mode, setMode] = useState<'standalone' | 'registryLookup'>('registryLookup');
 
   // Document state
   const [docFile, setDocFile] = useState<File | null>(null);
@@ -340,7 +340,19 @@ export const Verify: React.FC = () => {
                     if (file) {
                       setDocFile(file);
                       const buf = await file.arrayBuffer();
-                      setDocBytes(new Uint8Array(buf));
+                      const bytes = new Uint8Array(buf);
+                      setDocBytes(bytes);
+                      const hash = sha256Hex(bytes);
+                      setComputedSha256(hash);
+                      if (!bundleData) {
+                        try {
+                          const lookup = await api.lookupRecordByHash(hash);
+                          if (lookup?.proof) {
+                            setBundleData(lookup.proof);
+                            setFoundRecord(lookup.record);
+                          }
+                        } catch {}
+                      }
                     }
                   }}
                   className="hidden"
@@ -482,6 +494,21 @@ export const Verify: React.FC = () => {
                 </span>
               </div>
 
+              {/* Informative Callout if file was renamed */}
+              {docFile && foundRecord.file_name && docFile.name !== foundRecord.file_name && (
+                <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <div className="font-bold text-amber-900">
+                      File Renamed — Content Authenticity 100% Preserved
+                    </div>
+                    <p className="text-amber-800/90 leading-relaxed">
+                      The uploaded file is named <span className="font-mono font-semibold bg-amber-100 px-1 py-0.5 rounded">{docFile.name}</span>, but was originally registered as <span className="font-mono font-semibold bg-amber-100 px-1 py-0.5 rounded">{foundRecord.file_name || foundRecord.title}</span>. Because ProofChain verifies the cryptographic SHA-256 content digest, renaming the file does not compromise its validity.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs">
                 <div>
                   <div className="text-slate-400 font-mono text-[10px] uppercase font-bold">Document Title</div>
@@ -546,20 +573,45 @@ export const Verify: React.FC = () => {
           )}
 
           {unregistered && (
-            <div className="rounded-2xl border border-rose-200 bg-white p-6 space-y-4 shadow-sm">
+            <div className="rounded-2xl border border-rose-200 bg-white p-6 space-y-5 shadow-sm">
               <div className="flex items-center gap-3 text-rose-700">
-                <XCircle className="w-7 h-7 flex-shrink-0" />
+                <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                  <XCircle className="w-6 h-6 text-rose-600" />
+                </div>
                 <div>
                   <h2 className="text-lg font-bold text-slate-900">Unregistered or Altered File</h2>
                   <p className="text-xs text-slate-500">
-                    This file does not match any registered document in the registry.
+                    No authentic record matches this cryptographic fingerprint on the decentralized ledger.
                   </p>
                 </div>
               </div>
+
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
-                <div className="text-slate-600 font-mono text-[11px] break-all">
+                <div className="text-slate-500 font-medium">Computed Document Fingerprint:</div>
+                <div className="text-slate-800 font-mono text-[11px] break-all bg-white p-2.5 rounded border border-slate-200 font-semibold">
                   SHA-256: {computedSha256}
                 </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  If this document was modified or edited from an authentic registered file (even by 1 character), the SHA-256 digest changes completely. You can register it if it is a new authentic document, or analyze it in Tamper Lab.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <Link
+                  to="/proofchain/register"
+                  className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-2 shadow-sm transition-all"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Register as New Authentic Record</span>
+                </Link>
+
+                <Link
+                  to="/proofchain/tamper"
+                  className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center gap-2 transition-all shadow-2xs"
+                >
+                  <FlaskConical className="w-4 h-4 text-amber-600" />
+                  <span>Inspect & Simulate in Tamper Lab</span>
+                </Link>
               </div>
             </div>
           )}
