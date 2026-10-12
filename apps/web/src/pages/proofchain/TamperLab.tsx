@@ -21,7 +21,7 @@ import {
   Layers,
   Fingerprint
 } from 'lucide-react';
-import { api, BatchItem, RecordItem, AuditResponse } from '../../lib/api';
+import { api, BatchItem, RecordItem, AuditResponse, getFileUrl } from '../../lib/api';
 import { sha256Hex, leafHash as computeLeafHash } from '@proofchain/core';
 import { verifyBundle, HttpLedgerReader, EthereumReader } from '@proofchain/verifier';
 import { pinnedEthereum } from '../../generated/pinnedEthereum';
@@ -132,7 +132,7 @@ export const TamperLab: React.FC = () => {
 
     // Try downloading the real stored file copy if available
     try {
-      const res = await fetch(`http://localhost:4000/api/records/${record.id}/file`);
+      const res = await fetch(getFileUrl(record.id));
       if (res.ok) {
         const buffer = await res.arrayBuffer();
         const bytes = new Uint8Array(buffer);

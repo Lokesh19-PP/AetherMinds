@@ -69,6 +69,7 @@ export interface RecordItem {
   file_name?: string;
   mime?: string;
   storage_mode?: string;
+  has_stored_file?: boolean;
   created_at: string;
 }
 
@@ -167,6 +168,18 @@ export function clearIssuerToken(): void {
   if (typeof sessionStorage === 'undefined') return;
   sessionStorage.removeItem(ISSUER_TOKEN_STORAGE_KEY);
   sessionStorage.removeItem('issuerToken');
+}
+
+export function getFileUrl(recordId: string): string {
+  const rawBase = (import.meta.env.VITE_API_URL || '').trim();
+  const apiBase = (rawBase && !rawBase.includes('<') && !rawBase.includes('>')) ? rawBase.replace(/\/+$/, '') : '';
+  return `${apiBase}/api/records/${encodeURIComponent(recordId)}/file`;
+}
+
+export function getPreviewUrl(recordId: string): string {
+  const rawBase = (import.meta.env.VITE_API_URL || '').trim();
+  const apiBase = (rawBase && !rawBase.includes('<') && !rawBase.includes('>')) ? rawBase.replace(/\/+$/, '') : '';
+  return `${apiBase}/api/records/${encodeURIComponent(recordId)}/preview`;
 }
 
 export interface User {

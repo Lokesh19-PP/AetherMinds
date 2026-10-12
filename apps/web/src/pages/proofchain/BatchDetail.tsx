@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Layers, ShieldCheck, Download, Copy, Check, Lock, RefreshCw, Blocks, Shield, AlertCircle, Eye } from 'lucide-react';
-import { api, BatchDetailResponse } from '../../lib/api';
+import { api, BatchDetailResponse, getFileUrl } from '../../lib/api';
 import { MerkleTree } from '../../components/MerkleTree';
 
 export const BatchDetail: React.FC = () => {
@@ -363,7 +363,7 @@ export const BatchDetail: React.FC = () => {
                   <td className="py-3.5 px-3 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <a
-                        href={`/api/records/${rec.id}/file`}
+                        href={getFileUrl(rec.id)}
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}

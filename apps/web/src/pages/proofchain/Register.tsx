@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Upload, CheckCircle2, ArrowRight, Layers, AlertCircle, FileText, Eye, Download, ShieldCheck, Sparkles, RefreshCw } from 'lucide-react';
-import { api, RecordResponse } from '../../lib/api';
+import { api, RecordResponse, getFileUrl } from '../../lib/api';
 import { hashFile } from '../../lib/fileHash';
 import { useAuth } from '../../context/AuthContext';
 import '../../styles/pc-reg.css';
@@ -415,7 +415,7 @@ export const Register: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200">
                   {/* View Document Button */}
                   <a
-                    href={`/api/records/${r.recordId}/file`}
+                    href={getFileUrl(r.recordId)}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-blue-50 text-blue-700 hover:text-blue-900 border border-blue-200 font-semibold text-xs shadow-2xs transition-all"

@@ -34,7 +34,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { api, RecordItem } from '../../lib/api';
+import { api, RecordItem, getFileUrl } from '../../lib/api';
 import { getOrCreateCreatorKey, getKeyFingerprint } from '../../lib/creatorKey';
 import { sha256Hex, signManifest as coreSignManifest } from '@proofchain/core';
 import type { CreatorManifest, ManifestLicense } from '@proofchain/core';
@@ -132,7 +132,7 @@ export const CreatorHome: React.FC = () => {
       const data = await api.getWorksList();
       if (Array.isArray(data) && data.length > 0) {
         const mappedPosts: SocialWorkPost[] = data.map((item, idx) => {
-          const mediaUrl = `/api/records/${item.latest_record_id}/file`;
+          const mediaUrl = getFileUrl(item.latest_record_id);
 
           const catStr = (item.category || item.mime || '').toLowerCase();
           const category: 'Image' | 'Video' | 'Audio' | 'Document' =

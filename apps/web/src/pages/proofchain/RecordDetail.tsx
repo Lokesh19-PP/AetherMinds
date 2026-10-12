@@ -19,7 +19,7 @@ import {
   FileCode2,
   RefreshCw,
 } from 'lucide-react';
-import { api, RecordResponse } from '../../lib/api';
+import { api, RecordResponse, getFileUrl } from '../../lib/api';
 
 export const RecordDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -203,7 +203,7 @@ export const RecordDetail: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             {record.storage_mode === 'copy' && (
               <a
-                href={`/api/records/${record.id}/file`}
+                href={getFileUrl(record.id)}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-xs shadow-2xs transition-all"
